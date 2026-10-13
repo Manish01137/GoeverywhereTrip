@@ -10,6 +10,7 @@ import { WhatsAppIcon } from '../components/ui/BrandIcons'
 import { useData } from '../context/DataContext'
 import { img } from '../data/images'
 import { fmtDate } from '../lib/format'
+import { blogPosting, breadcrumbs } from '../lib/schema'
 
 export default function BlogPost() {
   const { slug } = useParams()
@@ -32,7 +33,8 @@ export default function BlogPost() {
 
   return (
     <>
-      <Seo title={blog.title} description={blog.excerpt} image={img(blog.image)} />
+      <Seo title={blog.title} description={blog.excerpt} image={img(blog.image)} type="article"
+        jsonLd={[blogPosting(blog), breadcrumbs([['Home', '/'], ['Blog', '/blogs'], [blog.title, `/blogs/${blog.slug}`]])]} />
       <article className="container-x max-w-3xl py-10">
         <Link to="/blogs" className="inline-flex items-center gap-1 text-sm font-semibold text-sky-brand hover:underline"><ArrowLeft size={16} /> All articles</Link>
         <span className="mt-6 block w-fit rounded-pill bg-sky-light px-3 py-1 text-xs font-bold text-sky-dark dark:bg-sky-500/15 dark:text-sky-300">{blog.category}</span>

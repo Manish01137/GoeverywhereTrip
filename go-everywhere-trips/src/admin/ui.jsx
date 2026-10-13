@@ -1,3 +1,5 @@
+import { Children, cloneElement, isValidElement } from 'react'
+
 // Small building blocks shared by admin pages.
 export function Panel({ title, action, children, className = '' }) {
   return (
@@ -13,21 +15,38 @@ export function Panel({ title, action, children, className = '' }) {
   )
 }
 
+// Real table on tablet/desktop; on phones each row becomes a card with "LABEL  value" lines
+// (labels come from `head`, injected into each <Td> by position).
 export function Table({ head, children, empty }) {
+  const rows = Children.map(children, (row) =>
+    isValidElement(row)
+      ? cloneElement(row, {
+          className: `${row.props.className || ''} block border-b border-slate-100 py-2 last:border-0 dark:border-slate-700 md:table-row md:py-0`,
+          children: Children.map(row.props.children, (cell, i) => (isValidElement(cell) ? cloneElement(cell, { label: head[i] }) : cell)),
+        })
+      : row,
+  )
   return (
-    <div className="relative overflow-x-auto">
-      <table className="w-full min-w-[640px] text-left text-sm">
-        <thead className="bg-slate-50 text-xs uppercase tracking-wider text-slate-500 dark:bg-slate-900/50 dark:text-slate-400">
+    <div className="relative md:overflow-x-auto">
+      <table className="block w-full text-left text-sm md:table md:min-w-[640px]">
+        <thead className="hidden bg-slate-50 text-xs uppercase tracking-wider text-slate-500 dark:bg-slate-900/50 dark:text-slate-400 md:table-header-group">
           <tr>{head.map((h) => <th key={h} scope="col" className="px-5 py-3 font-semibold">{h}</th>)}</tr>
         </thead>
-        <tbody className="divide-y divide-slate-100 dark:divide-slate-700">{children}</tbody>
+        <tbody className="block md:table-row-group md:divide-y md:divide-slate-100 md:dark:divide-slate-700">{rows}</tbody>
       </table>
       {empty}
     </div>
   )
 }
 
-export const Td = ({ className = '', children }) => <td className={`px-5 py-3.5 align-middle ${className}`}>{children}</td>
+export const Td = ({ className = '', label = '', children }) => (
+  <td
+    data-label={label}
+    className={`flex items-center justify-between gap-4 px-4 py-1.5 text-right before:shrink-0 [&>*]:min-w-0 before:text-left before:text-[11px] before:font-semibold before:uppercase before:tracking-wider before:text-slate-400 before:content-[attr(data-label)] md:table-cell md:px-5 md:py-3.5 md:text-left md:align-middle md:before:content-none ${className}`}
+  >
+    {children}
+  </td>
+)
 
 const STATUS = {
   Active: 'bg-green-100 text-green-700 dark:bg-green-500/15 dark:text-green-300',

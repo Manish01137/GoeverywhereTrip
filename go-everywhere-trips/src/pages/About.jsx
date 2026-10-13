@@ -9,6 +9,7 @@ import Button from '../components/ui/Button'
 import { Reveal, Stagger, fadeUp } from '../components/ui/Reveal'
 import { InstagramIcon, WhatsAppIcon } from '../components/ui/BrandIcons'
 import { IMAGES } from '../data/images'
+import { breadcrumbs } from '../lib/schema'
 import { useData } from '../context/DataContext'
 
 const STATS = [
@@ -35,7 +36,7 @@ export default function About() {
   const { settings, waLink } = useData()
   return (
     <>
-      <Seo title="About Us" description="Meet the Dehradun-based team behind Go Everywhere Trips — local trek leaders and travel designers running safe, small-group trips since 2021." image={IMAGES.aboutHero} />
+      <Seo title="About Us" description="Meet the Dehradun-based team behind Go Everywhere Trips — local trek leaders and travel designers running safe, small-group trips since 2021." image={IMAGES.aboutHero} jsonLd={breadcrumbs([['Home', '/'], ['About', '/about']])} />
       <PageHero image={IMAGES.aboutHero} eyebrow="Our story" title="Who We Are" subtitle="A bunch of pahadi kids from Dehradun who turned weekend treks into a travel company." tall />
 
       <section className="relative z-10 -mt-12">

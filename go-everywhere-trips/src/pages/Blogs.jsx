@@ -10,6 +10,7 @@ import { useData } from '../context/DataContext'
 import { BLOG_CATEGORIES } from '../data/blogs'
 import { IMAGES, img } from '../data/images'
 import { fmtDate } from '../lib/format'
+import { breadcrumbs } from '../lib/schema'
 
 export default function Blogs() {
   const { publicBlogs } = useData()
@@ -19,7 +20,7 @@ export default function Blogs() {
 
   return (
     <>
-      <Seo title="Travel Blog — Guides, Tips & Stories" description="Trek guides, packing lists, yatra tips and destination stories from the Go Everywhere Trips crew." image={featured ? img(featured.image) : IMAGES.blog1} />
+      <Seo title="Travel Blog — Guides, Tips & Stories" description="Trek guides, packing lists, yatra tips and destination stories from the Go Everywhere Trips crew." image={featured ? img(featured.image) : IMAGES.blog1} jsonLd={breadcrumbs([['Home', '/'], ['Blog', '/blogs']])} />
 
       <div className="container-x py-10">
         {featured && (

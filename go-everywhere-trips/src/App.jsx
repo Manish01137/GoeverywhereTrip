@@ -3,6 +3,7 @@ import { BrowserRouter, Route, Routes } from 'react-router-dom'
 import PageLoader from './components/ui/PageLoader'
 import ErrorBoundary from './components/ui/ErrorBoundary'
 import PublicLayout from './components/layout/PublicLayout'
+import { takeBootHtml } from './lib/prerender'
 
 const Home        = lazy(() => import('./pages/Home'))
 const Trips       = lazy(() => import('./pages/Trips'))
@@ -13,6 +14,7 @@ const CustomTrip  = lazy(() => import('./pages/CustomTrip'))
 const Blogs       = lazy(() => import('./pages/Blogs'))
 const BlogPost    = lazy(() => import('./pages/BlogPost'))
 const NotFound    = lazy(() => import('./pages/NotFound'))
+const PaymentResult = lazy(() => import('./pages/PaymentResult'))
 const AdminLogin  = lazy(() => import('./admin/AdminLogin'))
 const AdminLayout = lazy(() => import('./admin/AdminLayout'))
 
@@ -22,12 +24,18 @@ const Spinner = () => (
   </div>
 )
 
+// First load of a prerendered page: keep its static HTML on screen; afterwards show a spinner.
+function BootFallback() {
+  const html = takeBootHtml()
+  return html ? <div dangerouslySetInnerHTML={{ __html: html }} /> : <Spinner />
+}
+
 export default function App() {
   return (
     <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
       <PageLoader />
       <ErrorBoundary>
-        <Suspense fallback={<Spinner />}>
+        <Suspense fallback={<BootFallback />}>
           <Routes>
             <Route element={<PublicLayout />}>
               <Route path="/" element={<Home />} />
@@ -37,6 +45,8 @@ export default function App() {
               <Route path="/custom-trip" element={<CustomTrip />} />
               <Route path="/blogs" element={<Blogs />} />
               <Route path="/blogs/:slug" element={<BlogPost />} />
+              <Route path="/payment/success" element={<PaymentResult status="success" />} />
+              <Route path="/payment/failed" element={<PaymentResult status="failed" />} />
             </Route>
             {/* Trip detail has its own mobile CTA bar, so no floating WhatsApp button */}
             <Route element={<PublicLayout float={false} />}>

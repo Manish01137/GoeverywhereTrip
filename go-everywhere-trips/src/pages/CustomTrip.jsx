@@ -11,6 +11,7 @@ import { IMAGES } from '../data/images'
 import { useData } from '../context/DataContext'
 import { fmtDate, inr } from '../lib/format'
 import { isEmail, isPhone } from '../lib/validate'
+import { breadcrumbs } from '../lib/schema'
 
 const DESTINATIONS = ['Uttarakhand', 'Himachal', 'Spiti Valley', 'Kashmir', 'Ladakh', 'Rajasthan', 'Kerala', 'Andaman', 'Goa', 'Sikkim', 'Meghalaya', 'Char Dham']
 const HOTELS = [
@@ -84,7 +85,7 @@ export default function CustomTrip() {
 
   return (
     <>
-      <Seo title="Plan a Custom Trip" description="Tell us where, when and how you like to travel — we’ll design a private itinerary with stays, transport and activities in 24 hours." image={IMAGES.customTrips} />
+      <Seo title="Plan a Custom Trip" description="Tell us where, when and how you like to travel — we’ll design a private itinerary with stays, transport and activities in 24 hours." image={IMAGES.customTrips} jsonLd={breadcrumbs([['Home', '/'], ['Custom Trip', '/custom-trip']])} />
       <PageHero image={IMAGES.customTrips} eyebrow="Your trip, your way" title="Plan a Custom Trip" subtitle="Three quick steps. A handcrafted itinerary on your WhatsApp within 24 hours." />
 
       <div className="container-x max-w-3xl py-14">

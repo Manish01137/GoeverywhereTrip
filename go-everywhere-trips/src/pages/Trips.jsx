@@ -11,6 +11,7 @@ import { useData } from '../context/DataContext'
 import { TRIP_TYPES } from '../data/trips'
 import { IMAGES } from '../data/images'
 import { inr, monthKey } from '../lib/format'
+import { breadcrumbs } from '../lib/schema'
 
 const PAGE_SIZE = 6
 const TYPE_LABEL = { 'Group Tour': 'Group', Trek: 'Trek', Custom: 'Custom', Spiritual: 'Spiritual', Weekend: 'Weekend' }
@@ -112,7 +113,8 @@ export default function Trips() {
 
   return (
     <>
-      <Seo title="All Trips — Treks, Group Tours & Yatras" description="Browse fixed-departure treks, group tours, weekend getaways and spiritual yatras from Dehradun. Filter by destination, budget, duration and month." image={IMAGES.treks} />
+      <Seo title="Treks, Group Tours & Yatras from Dehradun — All Trips" description="Browse upcoming Himalayan treks, group tours, weekend getaways and Kedarnath yatras from Dehradun, Delhi & Chandigarh. Filter by destination, budget, duration and month." image={IMAGES.treks}
+        jsonLd={breadcrumbs([['Home', '/'], ['Trips', '/trips']])} />
 
       <section className="relative overflow-hidden bg-deep py-14 text-white" style={{ backgroundImage: `linear-gradient(rgba(12,74,110,.85),rgba(12,74,110,.9)), url(${IMAGES.heroAlt})`, backgroundSize: 'cover', backgroundPosition: 'center' }}>
         <div className="container-x">

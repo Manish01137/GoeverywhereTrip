@@ -60,7 +60,7 @@ export default function AdminDashboard() {
             <tr key={l.id} className="hover:bg-slate-50 dark:hover:bg-slate-700/30">
               <Td className="font-semibold">{l.name}</Td>
               <Td className="text-slate-500">{SOURCE_LABEL[l.source] || l.source}</Td>
-              <Td className="max-w-xs truncate text-slate-600 dark:text-slate-300">{l.enquiry}</Td>
+              <Td className="md:max-w-xs md:truncate text-slate-600 dark:text-slate-300">{l.enquiry}</Td>
               <Td className="whitespace-nowrap text-slate-500">{new Date(l.date).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })}</Td>
               <Td><StatusBadge status={l.status} /></Td>
             </tr>

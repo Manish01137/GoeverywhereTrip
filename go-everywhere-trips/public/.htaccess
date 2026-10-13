@@ -1,8 +1,51 @@
+# Go Everywhere Trips — Apache/LiteSpeed config for Hostinger shared hosting
+
+# Routing
+#   /trips, /trips/<slug>, /blogs/<slug>…  → the prerendered .html file (real content for Google)
+#   real files (JS, CSS, images, PHP)       → served as-is
+#   anything else (/admin, /payment/…)     → app.html, the React app shell
+<IfModule mod_dir.c>
+  DirectorySlash Off
+</IfModule>
 <IfModule mod_rewrite.c>
   RewriteEngine On
   RewriteBase /
-  RewriteRule ^index\.html$ - [L]
+
+  # One URL per page: /trips/ → /trips (keeps Google from seeing duplicates)
   RewriteCond %{REQUEST_FILENAME} !-f
-  RewriteCond %{REQUEST_FILENAME} !-d
-  RewriteRule . /index.html [L]
+  RewriteCond %{REQUEST_URI} ^/(.+)/$
+  RewriteRule ^ /%1 [R=301,L]
+
+  RewriteRule ^(index|app)\.html$ - [L]
+
+  RewriteCond %{REQUEST_FILENAME}.html -f
+  RewriteRule ^(.+)$ $1.html [L]
+
+  RewriteCond %{REQUEST_FILENAME} -f
+  RewriteRule ^ - [L]
+
+  RewriteRule ^ app.html [L]
+</IfModule>
+
+# Compress text files
+<IfModule mod_deflate.c>
+  AddOutputFilterByType DEFLATE text/html text/css text/plain application/javascript application/json image/svg+xml
+</IfModule>
+
+# Caching: index.html must always be fresh so new deploys show up immediately;
+# files in /assets have a content hash in their name, so they can be cached for a year.
+<IfModule mod_headers.c>
+  <FilesMatch "\.html$">
+    Header set Cache-Control "no-cache, must-revalidate"
+  </FilesMatch>
+  <FilesMatch "\.(js|css|woff2?|svg|png|jpe?g|webp)$">
+    Header set Cache-Control "public, max-age=31536000, immutable"
+  </FilesMatch>
+</IfModule>
+
+# Basic hardening
+Options -Indexes
+<IfModule mod_headers.c>
+  Header always set X-Content-Type-Options "nosniff"
+  Header always set Referrer-Policy "strict-origin-when-cross-origin"
 </IfModule>

@@ -42,7 +42,7 @@ export default function AdminLayout() {
   const sidebar = (
     <nav aria-label="Admin" className="flex h-full flex-col bg-deep text-sky-100">
       <div className="flex h-16 items-center justify-between px-5">
-        <Logo light className="text-lg" />
+        <Logo light className="whitespace-nowrap text-base" />
         <button type="button" onClick={() => setOpen(false)} aria-label="Close sidebar" className="rounded-lg p-1.5 hover:bg-white/10 lg:hidden"><X size={20} /></button>
       </div>
       <ul className="flex-1 space-y-1 px-3 py-4">

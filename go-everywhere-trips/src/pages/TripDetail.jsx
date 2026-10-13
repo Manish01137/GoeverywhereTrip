@@ -8,18 +8,21 @@ import {
 import Seo from '../components/ui/Seo'
 import Img from '../components/ui/Img'
 import Stars from '../components/ui/Stars'
-import TripCard from '../components/ui/TripCard'
+import PosterTripCard from '../components/ui/PosterTripCard'
 import Badge from '../components/ui/Badge'
 import MountainArt from '../components/ui/MountainArt'
 import Button from '../components/ui/Button'
 import { Reveal } from '../components/ui/Reveal'
 import { useFocusTrap } from '../components/ui/Modal'
 import ReviewCard from '../components/ui/ReviewCard'
+import CheckoutModal from '../components/booking/CheckoutModal'
 import { WhatsAppIcon } from '../components/ui/BrandIcons'
 import { useData } from '../context/DataContext'
 import { CANCELLATION_POLICY } from '../data/trips'
 import { img, large } from '../data/images'
 import { fmtDate, inr, seatTone, upcoming } from '../lib/format'
+import { ADVANCE_PERCENT, SITE_URL } from '../site.config'
+import { breadcrumbs, faqPage, touristTrip } from '../lib/schema'
 
 const HIGHLIGHT_ICONS = [Mountain, Trees, Waves, Tent, Sun, Sparkles]
 
@@ -75,7 +78,16 @@ export default function TripDetail() {
 
   return (
     <>
-      <Seo title={trip.name} description={`${trip.duration} · ${trip.destination} · from ${inr(trip.price)}/person. ${trip.description?.slice(0, 120) || ''}`} image={gallery[0]} />
+      <Seo
+        title={`${trip.name} — ${trip.duration}`}
+        description={`${trip.name}: ${trip.duration} ${trip.type.toLowerCase()} in ${trip.destination} from ${trip.startingPoint}, ${inr(trip.price)}/person. ${trip.highlights.slice(0, 3).join(', ')}. ${trip.rating}★ from ${trip.reviews} travellers.`}
+        image={gallery[0]}
+        jsonLd={[
+          touristTrip(trip),
+          breadcrumbs([['Home', '/'], ['Trips', '/trips'], [trip.name, `/trips/${trip.slug}`]]),
+          faqPage(trip.faqs),
+        ]}
+      />
 
       <div className="container-x pb-16 pt-6">
         {/* 1. Breadcrumb */}
@@ -153,8 +165,27 @@ export default function TripDetail() {
               {dates.length === 0 ? (
                 <p className="text-slate-500">No fixed dates right now — <a href={waLink(enquiry)} target="_blank" rel="noopener noreferrer" className="font-semibold text-sky-brand hover:underline">ask us on WhatsApp</a> for a private departure.</p>
               ) : (
-                <div className="card overflow-x-auto">
-                  <table className="w-full min-w-[520px] text-left text-sm">
+                <>
+                {/* Phones: stacked cards */}
+                <ul className="space-y-3 md:hidden">
+                  {dates.map((d) => (
+                    <li key={d.date} className={`card flex items-center justify-between gap-3 p-4 ${date === d.date ? 'ring-2 ring-sky-brand' : ''}`}>
+                      <div className="min-w-0">
+                        <p className="font-semibold text-slate-900 dark:text-white">{fmtDate(d.date, { weekday: 'short', day: 'numeric', month: 'short' })} → {fmtDate(addDays(d.date, trip.durationDays - 1), { day: 'numeric', month: 'short' })}</p>
+                        <p className="mt-1.5 flex flex-wrap items-center gap-2 text-sm">
+                          <span className="font-bold text-sky-brand">{inr(trip.price)}</span>
+                          <span className={`whitespace-nowrap rounded-pill px-2 py-0.5 text-xs font-bold ${seatTone(d.seats)}`}>{d.seats === 0 ? 'Sold out' : `${d.seats} left`}</span>
+                        </p>
+                      </div>
+                      <button type="button" onClick={() => pickDate(d.date)} disabled={d.seats === 0} className="shrink-0 rounded-pill bg-sky-brand px-5 py-2 text-sm font-bold text-white hover:bg-sky-dark disabled:bg-slate-300">
+                        {d.seats === 0 ? 'Full' : 'Book'}
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+                {/* Tablet & desktop: table */}
+                <div className="card hidden overflow-x-auto md:block">
+                  <table className="w-full text-left text-sm">
                     <thead className="bg-deep text-white">
                       <tr>{['Departure', 'Return', 'Seats', 'Price', ''].map((h) => <th key={h} scope="col" className="px-4 py-3 font-semibold">{h}</th>)}</tr>
                     </thead>
@@ -163,7 +194,7 @@ export default function TripDetail() {
                         <tr key={d.date} className={`odd:bg-white even:bg-sky-xlight dark:odd:bg-slate-800 dark:even:bg-slate-800/60 ${date === d.date ? 'ring-2 ring-inset ring-sky-brand' : ''}`}>
                           <td className="px-4 py-3 font-semibold">{fmtDate(d.date, { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' })}</td>
                           <td className="px-4 py-3 text-slate-500">{fmtDate(addDays(d.date, trip.durationDays - 1))}</td>
-                          <td className="px-4 py-3"><span className={`rounded-pill px-2.5 py-1 text-xs font-bold ${seatTone(d.seats)}`}>{d.seats} left</span></td>
+                          <td className="px-4 py-3"><span className={`whitespace-nowrap rounded-pill px-2.5 py-1 text-xs font-bold ${seatTone(d.seats)}`}>{d.seats} left</span></td>
                           <td className="px-4 py-3 font-bold text-sky-brand">{inr(trip.price)}</td>
                           <td className="px-4 py-3 text-right">
                             <button type="button" onClick={() => pickDate(d.date)} disabled={d.seats === 0} className="rounded-pill bg-sky-brand px-4 py-1.5 text-xs font-bold text-white hover:bg-sky-dark disabled:bg-slate-300">
@@ -175,6 +206,7 @@ export default function TripDetail() {
                     </tbody>
                   </table>
                 </div>
+                </>
               )}
             </Block>
 
@@ -219,7 +251,7 @@ export default function TripDetail() {
                   {trip.stay.map((s) => (
                     <div key={s.place} className="flex items-center justify-between gap-4 px-5 py-4 text-sm">
                       <span className="flex items-center gap-3"><BedDouble size={18} className="text-sky-brand" aria-hidden="true" /><span><strong className="block text-slate-900 dark:text-white">{s.place}</strong><span className="text-slate-500">{s.type}</span></span></span>
-                      <Badge tone="sky">{s.nights} {s.nights === 1 ? 'night' : 'nights'}</Badge>
+                      <Badge tone="sky" className="shrink-0 whitespace-nowrap">{s.nights} {s.nights === 1 ? 'night' : 'nights'}</Badge>
                     </div>
                   ))}
                   {trip.transport && (
@@ -233,6 +265,7 @@ export default function TripDetail() {
             <Block title="Important Info"><InfoTabs trip={trip} /></Block>
 
             {/* 10. Cancellation */}
+            <div id="cancellation" className="scroll-mt-24">
             <Accordion title={<><ShieldCheck size={18} className="mr-2 text-sky-brand" aria-hidden="true" />Cancellation Policy</>}>
               <table className="w-full text-sm">
                 <tbody>
@@ -245,6 +278,7 @@ export default function TripDetail() {
                 </tbody>
               </table>
             </Accordion>
+            </div>
 
             {/* 11. Reviews */}
             <Block title="Traveller Reviews">
@@ -273,7 +307,7 @@ export default function TripDetail() {
           <Reveal className="mt-16">
             <h2 className="mb-5 border-l-4 border-sky-brand pl-4 text-2xl font-bold text-deep dark:text-white">You May Also Like</h2>
             <div className="no-scrollbar -mx-4 flex snap-x gap-5 overflow-x-auto px-4 pb-4 md:mx-0 md:grid md:grid-cols-3 md:px-0">
-              {fallbackSimilar.map((t) => <TripCard key={t.id} trip={t} compact className="w-[80%] shrink-0 snap-start md:w-auto" />)}
+              {fallbackSimilar.map((t) => <div key={t.id} className="w-[80%] shrink-0 snap-start md:w-auto"><PosterTripCard trip={t} /></div>)}
             </div>
           </Reveal>
         )}
@@ -378,17 +412,16 @@ function BookingCard({ id, trip, dates, date, setDate, people, setPeople }) {
   const { waLink, trackWhatsApp } = useData()
   const [copied, setCopied] = useState(false)
   const [error, setError] = useState('')
+  const [checkout, setCheckout] = useState(false)
   const selected = dates.find((d) => d.date === date)
   const maxPeople = selected?.seats || 20
   const total = trip.price * people
-  const url = typeof window !== 'undefined' ? window.location.href.split('#')[0] : ''
+  const url = `${SITE_URL}/trips/${trip.slug}` // always share the live URL
 
   const book = () => {
     if (!date) { setError('Please pick a departure date'); return }
     setError('')
-    const msg = `Hi! I'd like to book *${trip.name}*\n📅 ${fmtDate(date)}\n👥 ${people} ${people === 1 ? 'person' : 'people'}\n💰 ${inr(total)} total\n\nPlease share payment details.`
-    trackWhatsApp(`Booking · ${trip.name} · ${fmtDate(date)} · ${people} pax`)
-    window.open(waLink(msg), '_blank', 'noopener,noreferrer')
+    setCheckout(true)
   }
 
   const copy = async () => {
@@ -432,7 +465,7 @@ function BookingCard({ id, trip, dates, date, setDate, people, setPeople }) {
       <a href={waLink(`Hi, I'm interested in ${trip.name}`)} target="_blank" rel="noopener noreferrer" onClick={() => trackWhatsApp(`Trip enquiry · ${trip.name}`)} className="flex w-full items-center justify-center gap-2 rounded-pill bg-green-500 py-3 font-bold text-white transition-colors hover:bg-green-600">
         <WhatsAppIcon size={18} /> Enquire on WhatsApp
       </a>
-      <p className="flex items-center justify-center gap-1.5 text-xs text-slate-500"><Calendar size={12} aria-hidden="true" />Pay just 30% now to reserve your seat</p>
+      <p className="flex items-center justify-center gap-1.5 text-xs text-slate-500"><Calendar size={12} aria-hidden="true" />Pay just {ADVANCE_PERCENT}% now to reserve · secured by PayU</p>
 
       <div className="flex items-center justify-center gap-2 border-t border-slate-100 pt-4 text-sm text-slate-500 dark:border-slate-700">
         <span>Share:</span>
@@ -443,6 +476,7 @@ function BookingCard({ id, trip, dates, date, setDate, people, setPeople }) {
         )}
         {copied && <span role="status" className="text-xs font-semibold text-green-600">Link copied!</span>}
       </div>
+      {date && <CheckoutModal open={checkout} onClose={() => setCheckout(false)} trip={trip} date={date} people={people} />}
     </div>
   )
 }

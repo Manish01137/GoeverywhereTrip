@@ -1,0 +1,9 @@
+# Only the two entry points may be called from the web
+<FilesMatch "^(lib\.php|catalog\.json)$">
+  Require all denied
+</FilesMatch>
+<IfModule mod_rewrite.c>
+  RewriteEngine On
+  RewriteRule ^data(/|$) - [F,L]
+</IfModule>
+Options -Indexes

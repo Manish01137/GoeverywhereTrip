@@ -1,9 +1,11 @@
 import { useEffect, useState } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
+import { wasPrerendered } from '../../lib/prerender'
 
-// Branded splash shown for 800ms on first app load only.
+// Branded splash shown for 800ms on first app load only — skipped when the page arrived
+// prerendered, because its content is already visible (and hiding it would hurt LCP).
 export default function PageLoader() {
-  const [show, setShow] = useState(true)
+  const [show, setShow] = useState(!wasPrerendered)
   useEffect(() => {
     const t = setTimeout(() => setShow(false), 800)
     return () => clearTimeout(t)

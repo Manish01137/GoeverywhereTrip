@@ -22,3 +22,12 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Hostinger deploy bundle
+hostinger-upload.zip
+
+# PayU — secrets, logs and generated catalog
+payu-config.php
+payu-logs/
+public/api/payu/data/
+public/api/payu/catalog.json

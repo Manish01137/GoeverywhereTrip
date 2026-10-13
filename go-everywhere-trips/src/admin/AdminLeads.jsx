@@ -40,12 +40,12 @@ export default function AdminLeads() {
     <Panel
       action={
         <div className="flex w-full flex-wrap items-center justify-between gap-3">
-          <div role="tablist" aria-label="Lead source" className="flex flex-wrap gap-1 rounded-pill bg-slate-100 p-1 dark:bg-slate-900">
+          <div role="tablist" aria-label="Lead source" className="no-scrollbar flex max-w-full gap-1 overflow-x-auto rounded-pill bg-slate-100 p-1 dark:bg-slate-900">
             {TABS.map((t) => {
               const n = leads.filter((l) => l.source === t.id).length
               return (
                 <button key={t.id} role="tab" type="button" aria-selected={tab === t.id} onClick={() => setTab(t.id)}
-                  className={`rounded-pill px-4 py-1.5 text-sm font-semibold transition-colors ${tab === t.id ? 'bg-white text-sky-dark shadow dark:bg-slate-700 dark:text-white' : 'text-slate-500 hover:text-slate-800 dark:hover:text-white'}`}>
+                  className={`shrink-0 whitespace-nowrap rounded-pill px-4 py-1.5 text-sm font-semibold transition-colors ${tab === t.id ? 'bg-white text-sky-dark shadow dark:bg-slate-700 dark:text-white' : 'text-slate-500 hover:text-slate-800 dark:hover:text-white'}`}>
                   {t.label} <span className="text-xs opacity-60">({n})</span>
                 </button>
               )
@@ -71,7 +71,7 @@ export default function AdminLeads() {
               ) : l.phone}
             </Td>
             <Td className="text-slate-500">{l.email}</Td>
-            <Td className="min-w-[16rem] text-slate-600 dark:text-slate-300">{l.enquiry}</Td>
+            <Td className="md:min-w-[16rem] text-slate-600 dark:text-slate-300">{l.enquiry}</Td>
             <Td className="whitespace-nowrap text-slate-500">{new Date(l.date).toLocaleString('en-IN', { day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit' })}</Td>
             <Td>
               <label htmlFor={`st-${l.id}`} className="sr-only">Status for {l.name}</label>

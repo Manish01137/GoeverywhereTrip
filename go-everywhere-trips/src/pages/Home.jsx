@@ -11,6 +11,9 @@ import InstagramSection from '../components/sections/InstagramSection'
 import BlogsSection from '../components/sections/BlogsSection'
 import FaqSection from '../components/sections/FaqSection'
 import FinalCTA from '../components/sections/FinalCTA'
+import { FAQS } from '../components/sections/FaqSection'
+import { useData } from '../context/DataContext'
+import { faqPage, organization, website } from '../lib/schema'
 
 const all = () => true
 const byType = (type) => (t) => t.type === type
@@ -32,9 +35,13 @@ const byReviews = (a, b) => b.reviews - a.reviews
 const byRating = (a, b) => b.rating - a.rating || b.reviews - a.reviews
 
 export default function Home() {
+  const { settings } = useData()
   return (
     <>
-      <Seo description="Group tours, Himalayan treks, Kedarnath yatras and custom trips from Dehradun. Expert-led, safe and priced direct. Book on WhatsApp in minutes." />
+      <Seo
+        description="Book Himalayan treks, group tours and Kedarnath yatras from Dehradun — Chopta, Harshil, Spiti, Manali, Rishikesh & more. Expert local trip captains, small groups, best prices. Pay securely online."
+        jsonLd={[organization(settings), website(), faqPage(FAQS)]}
+      />
       <Hero />
       <StoryCategories />
       <TripTabsCarousel id="trending" title="Trending Trips" tabs={TRENDING_TABS} sort={byReviews} />

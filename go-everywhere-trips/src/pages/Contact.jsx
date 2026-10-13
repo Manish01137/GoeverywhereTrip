@@ -11,6 +11,7 @@ import { InstagramIcon, WhatsAppIcon } from '../components/ui/BrandIcons'
 import { IMAGES } from '../data/images'
 import { useData } from '../context/DataContext'
 import { isEmail, isPhone } from '../lib/validate'
+import { breadcrumbs, organization } from '../lib/schema'
 
 const EMPTY = { name: '', email: '', phone: '', subject: '', message: '' }
 
@@ -49,7 +50,7 @@ export default function Contact() {
 
   return (
     <>
-      <Seo title="Contact Us" description="Talk to the Go Everywhere Trips team in Dehradun — WhatsApp +91 94107 76387, Instagram @goeverywheretrips, or send us a message." image={IMAGES.heroAlt} />
+      <Seo title="Contact Us" description="Talk to the Go Everywhere Trips team in Dehradun — WhatsApp +91 94107 76387, Instagram @goeverywheretrips, or send us a message." image={IMAGES.heroAlt} jsonLd={[organization(settings), breadcrumbs([['Home', '/'], ['Contact', '/contact']])]} />
       <PageHero image={IMAGES.heroAlt} eyebrow="Say hello" title="Let’s Plan Your Trip" subtitle="Questions, custom plans or just trail gossip — we usually reply within 30 minutes." />
 
       <div className="container-x grid grid-cols-1 gap-12 py-16 lg:grid-cols-2">

@@ -15,7 +15,7 @@ export default function AdminReviews() {
           <tr key={r.id} className="align-top hover:bg-slate-50 dark:hover:bg-slate-700/30">
             <Td><p className="font-semibold">{r.name}</p><p className="text-xs text-slate-500">{r.trip}</p></Td>
             <Td><Stars rating={r.rating} /></Td>
-            <Td className="min-w-[18rem] text-slate-600 dark:text-slate-300">{r.review}</Td>
+            <Td className="md:min-w-[18rem] text-slate-600 dark:text-slate-300">{r.review}</Td>
             <Td className="whitespace-nowrap text-slate-500">{r.date ? fmtDate(r.date) : '—'}</Td>
             <Td>
               <button type="button" role="switch" aria-checked={r.status !== 'Hidden'} aria-label={`Show review by ${r.name} on site`} onClick={() => toggle(r.id)}

@@ -6,6 +6,7 @@ import App from './App'
 import { ThemeProvider } from './context/ThemeContext'
 import { AdminProvider } from './context/AdminContext'
 import { DataProvider } from './context/DataContext'
+import './lib/prerender' // must run before React clears #root
 import './index.css'
 
 createRoot(document.getElementById('root')).render(

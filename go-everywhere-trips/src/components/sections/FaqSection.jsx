@@ -4,7 +4,7 @@ import { Link } from 'react-router-dom'
 import { ChevronDown } from 'lucide-react'
 import Eyebrow from '../ui/Eyebrow'
 
-const FAQS = [
+export const FAQS = [
   { q: 'Who travels with Go Everywhere Trips?', a: 'Mostly solo travellers, friends and couples aged 20–40 — students, working professionals and first-time trekkers. Around 45% of our travellers are women and many of them travel solo.' },
   { q: 'Where do your trips start?', a: 'Most Uttarakhand trips start and end in Dehradun (pickup from ISBT or the railway station). Himachal trips usually start in Delhi or Chandigarh, and each trip page lists its exact pickup point.' },
   { q: 'How experienced are your trip captains?', a: 'Every captain is a certified trek leader with wilderness first-aid training and years on these exact routes. Most of them grew up in the mountains they guide you through.' },

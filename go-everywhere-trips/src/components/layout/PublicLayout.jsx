@@ -5,10 +5,12 @@ import Navbar from './Navbar'
 import Footer from './Footer'
 import WhatsAppFloat from './WhatsAppFloat'
 import BackToTop from './BackToTop'
+import { clearBootHtml } from '../../lib/prerender'
 
 // Scroll to top on route change, or to the #hash target when present.
 function ScrollManager() {
   const { pathname, hash } = useLocation()
+  useEffect(clearBootHtml, []) // the live page has mounted; later lazy loads use the spinner
   useEffect(() => {
     if (!hash) {
       window.scrollTo(0, 0)
