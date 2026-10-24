@@ -38,7 +38,6 @@ Disallow: /payment/
 Sitemap: ${SITE_URL}/sitemap.xml
 `)
 console.log(`✓ sitemap.xml (${routes.length} URLs) + robots.txt for ${SITE_URL}`)
-if (SITE_URL.includes('goeverywheretrips.com')) console.warn('  ⚠ SITE_URL is still the placeholder — set your real domain in src/site.config.js')
 
 // 2. pristine SPA shell
 copyFileSync(join(DIST, 'index.html'), join(DIST, 'app.html'))

@@ -5,10 +5,9 @@ import { readFileSync, writeFileSync } from 'node:fs'
 import { SITE_URL } from '../src/site.config.js'
 
 const file = new URL('../src/data/live-content.json', import.meta.url)
-const placeholder = SITE_URL.includes('goeverywheretrips.com')
 
-if (process.env.SKIP_SYNC || placeholder) {
-  console.log(placeholder ? '• Content sync skipped (SITE_URL is still the placeholder)' : '• Content sync skipped (SKIP_SYNC)')
+if (process.env.SKIP_SYNC) {
+  console.log('• Content sync skipped (SKIP_SYNC)')
 } else {
   try {
     const res = await fetch(`${SITE_URL}/api/content.php`, { signal: AbortSignal.timeout(10000) })

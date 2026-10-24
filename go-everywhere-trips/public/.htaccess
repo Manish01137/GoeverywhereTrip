@@ -11,10 +11,22 @@
   RewriteEngine On
   RewriteBase /
 
+  # One official address: https://goeverywheretrips.com
+  # www and the .in domain (if pointed at this site) redirect here, keeping the page path.
+  RewriteCond %{HTTP_HOST} ^(www\.)?goeverywheretrips\.in$ [NC,OR]
+  RewriteCond %{HTTP_HOST} ^www\.goeverywheretrips\.com$ [NC]
+  RewriteRule ^ https://goeverywheretrips.com%{REQUEST_URI} [R=301,L]
+
+  # Always HTTPS (the X-Forwarded-Proto check avoids loops behind Hostinger's CDN)
+  RewriteCond %{HTTP_HOST} ^goeverywheretrips\.com$ [NC]
+  RewriteCond %{HTTPS} off
+  RewriteCond %{HTTP:X-Forwarded-Proto} !https
+  RewriteRule ^ https://goeverywheretrips.com%{REQUEST_URI} [R=301,L]
+
   # One URL per page: /trips/ → /trips (keeps Google from seeing duplicates)
   RewriteCond %{REQUEST_FILENAME} !-f
   RewriteCond %{REQUEST_URI} ^/(.+)/$
-  RewriteRule ^ /%1 [R=301,L]
+  RewriteRule ^ https://%{HTTP_HOST}/%1 [R=301,L]
 
   RewriteRule ^(index|app)\.html$ - [L]
 

@@ -1,6 +1,6 @@
 // Site-wide settings used by the app AND the build scripts (sitemap, prerender, PayU catalog).
-// ⚠️ Set SITE_URL to your real domain before building for production (no trailing slash).
-export const SITE_URL = 'https://www.goeverywheretrips.com'
+// The one official address of the site (no trailing slash). www / .in visitors are redirected here (public/.htaccess).
+export const SITE_URL = 'https://goeverywheretrips.com'
 
 export const SITE_NAME = 'Go Everywhere Trips'
 

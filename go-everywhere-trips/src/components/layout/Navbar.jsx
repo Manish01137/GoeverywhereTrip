@@ -2,7 +2,7 @@ import { useCallback, useEffect, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { AnimatePresence, motion } from 'framer-motion'
 import { Link, NavLink, useLocation } from 'react-router-dom'
-import { ChevronDown, Menu, Phone, X } from 'lucide-react'
+import { ChevronDown, Home, Menu, Phone, X } from 'lucide-react'
 import { WhatsAppIcon } from '../ui/BrandIcons'
 import { useData } from '../../context/DataContext'
 import { useFocusTrap } from '../ui/Modal'
@@ -91,7 +91,12 @@ export default function Navbar() {
       <nav className="container-x flex h-16 items-center justify-between gap-4" aria-label="Main">
         <Logo light={overlay} />
 
-        <ul className="hidden lg:flex items-center gap-8">
+        <ul className="hidden lg:flex items-center gap-7">
+          <li>
+            <NavLink to="/" end className={(s) => `${linkCls(overlay)(s)} inline-flex items-center gap-1.5`}>
+              <Home size={15} aria-hidden="true" /> Home
+            </NavLink>
+          </li>
           <li className="relative" onMouseEnter={() => setDropdown(true)} onMouseLeave={() => setDropdown(false)}>
             <div className="flex items-center">
               <NavLink to="/trips" className={linkCls(overlay)} end>Trips</NavLink>
@@ -141,6 +146,11 @@ export default function Navbar() {
               <span className="block text-sm font-semibold text-slate-900 dark:text-white">{settings.phoneDisplay}</span>
             </span>
           </a>
+          {pathname !== '/' && (
+            <Link to="/" aria-label="Go to home page" title="Home" className="flex h-9 w-9 items-center justify-center rounded-full bg-sky-light text-sky-dark transition-colors hover:bg-sky-brand hover:text-white dark:bg-slate-800 dark:text-sky-300 lg:hidden">
+              <Home size={18} />
+            </Link>
+          )}
           <ThemeToggle compact={!wide} />
           <a
             href={waLink()}
@@ -188,6 +198,11 @@ export default function Navbar() {
                 animate="show"
                 variants={{ hidden: {}, show: { transition: { staggerChildren: 0.04, delayChildren: 0.08 } } }}
               >
+                <motion.div variants={item}>
+                  <Link to="/" onClick={() => setOpen(false)} className={`mb-5 flex items-center gap-3 rounded-2xl p-3 text-lg font-bold ${pathname === '/' ? 'bg-sky-brand text-white' : 'bg-sky-light text-deep dark:bg-slate-800 dark:text-white'}`}>
+                    <Home size={20} aria-hidden="true" /> Home
+                  </Link>
+                </motion.div>
                 <motion.p variants={item} className="mb-2 text-xs font-bold uppercase tracking-[0.2em] text-slate-400">Trips</motion.p>
                 <motion.div variants={item} className="mb-5 flex flex-wrap gap-2">
                   {[{ label: 'All Trips', to: '/trips' }, ...TRIP_MENU.filter((m) => m.label !== 'Customised')].map((m) => (
