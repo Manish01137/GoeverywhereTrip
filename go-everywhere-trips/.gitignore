@@ -34,3 +34,6 @@ public/api/payu/catalog.json
 
 # Server data created by the admin panel during local testing
 site-data/
+
+# Ready-to-upload bundle (contains site-config.php secrets)
+deploy/
