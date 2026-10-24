@@ -2,11 +2,11 @@ import { useCallback, useEffect, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { AnimatePresence, motion } from 'framer-motion'
 import { Link, NavLink, useLocation } from 'react-router-dom'
-import { ChevronDown, Menu, Moon, Phone, Sun, X } from 'lucide-react'
+import { ChevronDown, Menu, Phone, X } from 'lucide-react'
 import { WhatsAppIcon } from '../ui/BrandIcons'
-import { useTheme } from '../../context/ThemeContext'
 import { useData } from '../../context/DataContext'
 import { useFocusTrap } from '../ui/Modal'
+import ThemeToggle from '../ui/ThemeToggle'
 
 export const TRIP_MENU = [
   { label: 'Group Tours', to: '/trips?type=Group%20Tour' },
@@ -23,6 +23,17 @@ const LINKS = [
   { label: 'Contact', to: '/contact' },
 ]
 
+function useMediaQuery(q) {
+  const [match, setMatch] = useState(() => typeof window !== 'undefined' && window.matchMedia(q).matches)
+  useEffect(() => {
+    const m = window.matchMedia(q)
+    const on = () => setMatch(m.matches)
+    m.addEventListener('change', on)
+    return () => m.removeEventListener('change', on)
+  }, [q])
+  return match
+}
+
 const item = { hidden: { opacity: 0, x: 24 }, show: { opacity: 1, x: 0 } }
 
 // Brand lockup: the emblem from the logo + the "GO EVERYWHERE — TRIPS" wordmark in the logo's style.
@@ -32,7 +43,7 @@ export function Logo({ light = false, className = '' }) {
   const rule = light ? 'bg-sun' : 'bg-sun-dark dark:bg-sun'
   return (
     <Link to="/" className={`flex shrink-0 items-center gap-2.5 ${className}`} aria-label="Go Everywhere Trips — home">
-      <img src="/brand/logo-mark-128.webp" alt="" width="40" height="40" className="h-10 w-10 rounded-[10px] shadow-sm" />
+      <img src="/brand/logo-circle-128.webp" alt="" width="44" height="44" className={`h-11 w-11 rounded-full shadow-md ring-2 ${light ? 'ring-sun/80' : 'ring-sun ring-offset-2 ring-offset-white dark:ring-offset-slate-900'}`} />
       <span className="leading-none" aria-hidden="true">
         <span className={`block whitespace-nowrap text-[15px] font-black tracking-tight sm:text-[17px] ${word}`}>GO EVERYWHERE</span>
         <span className={`mt-1 flex items-center gap-1.5 text-[10px] font-black tracking-[0.3em] sm:text-[11px] ${sun}`}>
@@ -52,7 +63,7 @@ export default function Navbar() {
   const [scrolled, setScrolled] = useState(false)
   const [open, setOpen] = useState(false)
   const [dropdown, setDropdown] = useState(false)
-  const { dark, toggle } = useTheme()
+  const wide = useMediaQuery('(min-width: 640px)')
   const { waLink, trackWhatsApp, settings } = useData()
   const { pathname, search } = useLocation()
 
@@ -130,14 +141,7 @@ export default function Navbar() {
               <span className="block text-sm font-semibold text-slate-900 dark:text-white">{settings.phoneDisplay}</span>
             </span>
           </a>
-          <button
-            type="button"
-            onClick={toggle}
-            aria-label={dark ? 'Switch to light mode' : 'Switch to dark mode'}
-            className={`p-2 rounded-full hover:bg-sky-light hover:text-sky-dark dark:hover:bg-slate-800 ${overlay ? 'text-white' : 'text-slate-600 dark:text-slate-300'}`}
-          >
-            {dark ? <Sun size={20} /> : <Moon size={20} />}
-          </button>
+          <ThemeToggle compact={!wide} />
           <a
             href={waLink()}
             target="_blank"

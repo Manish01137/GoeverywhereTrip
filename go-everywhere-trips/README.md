@@ -17,7 +17,7 @@ Go to `yourdomain.com/admin/login`. The email and password are in `site-config.p
 Everything you change in the admin panel is saved on the server and goes **live for all visitors** within about a second. The top bar shows "Live on website" when the save is done.
 - **Trips:** the full package editor. It has basics, photos, a brochure PDF and an optional YouTube video (all from Google Drive links), a day-by-day itinerary, inclusions and exclusions, stays, FAQs, and departure dates with seats. New trips start as **Draft**; switch them to "Live on website" when they're ready. Use Duplicate to start a new package from an existing one.
 - **Google Drive links:** share the *file* as "Anyone with the link", then paste the link. Folder links don't work, and the editor warns you if you paste one.
-- **Leads:** shows real enquiries from the custom-trip form, the popup and the contact form, plus payments and WhatsApp clicks. Statuses are saved, and you can export to CSV.
+- **Leads:** "All enquiries" shows everyone who filled in the popup, the custom-trip form or the contact form. **Bookings** shows every Book Now checkout as Paid, Failed or **Not completed** (they entered their details but didn't pay), with a one-tap WhatsApp follow-up. The page refreshes itself every 30 seconds. Statuses are saved, and you can export to CSV.
 - **Settings → Version history:** every save keeps the previous version (the last 30). Restore one if something goes wrong.
 
 Checkout always charges the price saved in the admin panel. Content lives in `site-data/content.json`, next to `site-config.php` and outside the website folder.

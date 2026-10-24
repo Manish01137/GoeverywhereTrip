@@ -1,11 +1,11 @@
 import { useEffect, useRef, useState } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
 import { Link, Navigate, NavLink, Route, Routes, useLocation } from 'react-router-dom'
-import { AlertTriangle, BellRing, CalendarDays, CheckCircle2, CloudUpload, ExternalLink, Loader2, FileText, LayoutDashboard, LogOut, Map, Menu, MessageSquareQuote, Moon, Settings, Sun, Users, X } from 'lucide-react'
+import { AlertTriangle, BellRing, CalendarDays, CheckCircle2, CloudUpload, ExternalLink, Loader2, FileText, LayoutDashboard, LogOut, Map, Menu, MessageSquareQuote, Settings, Users, X } from 'lucide-react'
 import Seo from '../components/ui/Seo'
 import { Logo } from '../components/layout/Navbar'
 import { useAdmin } from '../context/AdminContext'
-import { useTheme } from '../context/ThemeContext'
+import ThemeToggle from '../components/ui/ThemeToggle'
 import { useData } from '../context/DataContext'
 import AdminDashboard from './AdminDashboard'
 import AdminTrips from './AdminTrips'
@@ -31,7 +31,6 @@ const NAV = [
 
 export default function AdminLayout() {
   const { checked, isAuthed, logout, refresh, csrf } = useAdmin()
-  const { dark, toggle } = useTheme()
   const { content, rev, source } = useData()
   const { pathname } = useLocation()
   const [open, setOpen] = useState(false)
@@ -96,7 +95,7 @@ export default function AdminLayout() {
           </div>
           <div className="flex items-center gap-2">
             <SaveStatus save={save} />
-            <button type="button" onClick={toggle} aria-label={dark ? 'Switch to light mode' : 'Switch to dark mode'} className="rounded-lg p-2 text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800">{dark ? <Sun size={18} /> : <Moon size={18} />}</button>
+            <ThemeToggle compact hint={false} />
             <button type="button" onClick={logout} className="inline-flex items-center gap-2 rounded-pill border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-600 hover:border-red-300 hover:text-red-600 dark:border-slate-700 dark:text-slate-300">
               <LogOut size={16} /> <span className="hidden sm:inline">Logout</span>
             </button>

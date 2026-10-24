@@ -131,7 +131,22 @@ switch ($action) {
             return $l;
         }, $read('leads.csv'));
         $clicks = $read('clicks.csv');
-        $payments = array_values(array_filter($read('payments.csv'), fn($p) => in_array($p['event'] ?? '', ['success', 'failed'], true)));
+        // One row per checkout attempt (txnid), showing its final result:
+        // success > failed > initiated ("filled in details but didn't finish paying").
+        $rank = ['initiated' => 1, 'failed' => 2, 'success' => 3];
+        $byTxn = [];
+        foreach (array_reverse($read('payments.csv')) as $p) { // oldest first, so details from "initiated" are kept
+            $id = $p['txnid'] ?? '';
+            $ev = $p['event'] ?? '';
+            if (!$id || !isset($rank[$ev])) continue;
+            $cur = $byTxn[$id] ?? null;
+            if (!$cur) { $byTxn[$id] = $p; continue; }
+            $merged = array_merge($cur, array_filter($p, fn($v) => $v !== ''));
+            if ($rank[$ev] < $rank[$cur['event']]) { $merged['event'] = $cur['event']; $merged['status'] = $cur['status']; }
+            $merged['started'] = $cur['started'] ?? $cur['time'];
+            $byTxn[$id] = $merged;
+        }
+        $payments = array_values(array_reverse($byTxn));
         reply(200, ['ok' => true, 'leads' => $leads, 'clicks' => array_slice($clicks, 0, 500), 'payments' => $payments]);
 
     case 'lead-status':
