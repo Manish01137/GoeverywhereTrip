@@ -12,8 +12,12 @@ export default {
           xlight: '#F0F9FF',
         },
         deep: {
-          DEFAULT: '#0C4A6E',
-          dark:    '#083344',
+          DEFAULT: '#024480',   // logo blue
+          dark:    '#01325F',
+        },
+        sun: {
+          DEFAULT: '#FED603',   // logo yellow
+          dark:    '#D9A300',   // readable on white
         },
         accent: '#F97316',
       },

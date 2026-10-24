@@ -6,8 +6,7 @@
 import { existsSync, mkdirSync, readFileSync, writeFileSync, copyFileSync } from 'node:fs'
 import { dirname, join } from 'node:path'
 import { preview } from 'vite'
-import { trips } from '../src/data/trips.js'
-import { blogs } from '../src/data/blogs.js'
+import { trips, blogs } from './content-source.mjs'
 import { SITE_URL } from '../src/site.config.js'
 
 const DIST = new URL('../dist/', import.meta.url).pathname

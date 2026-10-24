@@ -2,17 +2,19 @@ import { motion } from 'framer-motion'
 import { useNavigate } from 'react-router-dom'
 import { ArrowDownRight, ArrowUpRight, CalendarDays, Map, MessageSquareQuote, Plus, Users } from 'lucide-react'
 import { useData } from '../context/DataContext'
+import useServerLeads from './useServerLeads'
 import { upcoming } from '../lib/format'
 import { Panel, StatusBadge, Table, Td, EmptyRow } from './ui'
 
 const DAY = 864e5
-const SOURCE_LABEL = { custom: 'Custom enquiry', contact: 'Contact form', whatsapp: 'WhatsApp click' }
+const SOURCE_LABEL = { custom: 'Custom trip', contact: 'Contact form', popup: 'Website popup' }
 
 export default function AdminDashboard() {
-  const { trips, leads, reviews } = useData()
+  const { trips, reviews } = useData()
+  const { leads, payments } = useServerLeads()
   const navigate = useNavigate()
   const now = Date.now()
-  const inWindow = (from, to) => leads.filter((l) => { const t = new Date(l.date).getTime(); return t > now - from * DAY && t <= now - to * DAY }).length
+  const inWindow = (from, to) => leads.filter((l) => { const t = new Date(l.time).getTime(); return t > now - from * DAY && t <= now - to * DAY }).length
   const thisWeek = inWindow(7, 0)
   const lastWeek = inWindow(14, 7)
   const leadTrend = lastWeek ? Math.round(((thisWeek - lastWeek) / lastWeek) * 100) : thisWeek ? 100 : 0
@@ -22,7 +24,7 @@ export default function AdminDashboard() {
     { label: 'Total Trips', value: trips.length, sub: `${trips.filter((t) => t.status !== 'Draft').length} live`, Icon: Map, tone: 'bg-sky-brand' },
     { label: 'Active Departures', value: departures.length, sub: `${departures.reduce((s, d) => s + d.seats, 0)} seats open`, Icon: CalendarDays, tone: 'bg-deep' },
     { label: 'New Leads', value: leads.filter((l) => l.status === 'New').length, sub: `${thisWeek} this week`, trend: leadTrend, Icon: Users, tone: 'bg-accent' },
-    { label: 'Total Reviews', value: reviews.length, sub: `${(reviews.reduce((s, r) => s + r.rating, 0) / (reviews.length || 1)).toFixed(1)} ★ average`, Icon: MessageSquareQuote, tone: 'bg-green-500' },
+    { label: 'Paid Bookings', value: payments.filter((p) => p.event === 'success').length, sub: `${reviews.length} reviews on site`, Icon: MessageSquareQuote, tone: 'bg-green-500' },
   ]
 
   return (
@@ -61,7 +63,7 @@ export default function AdminDashboard() {
               <Td className="font-semibold">{l.name}</Td>
               <Td className="text-slate-500">{SOURCE_LABEL[l.source] || l.source}</Td>
               <Td className="md:max-w-xs md:truncate text-slate-600 dark:text-slate-300">{l.enquiry}</Td>
-              <Td className="whitespace-nowrap text-slate-500">{new Date(l.date).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })}</Td>
+              <Td className="whitespace-nowrap text-slate-500">{new Date(l.time).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })}</Td>
               <Td><StatusBadge status={l.status} /></Td>
             </tr>
           ))}

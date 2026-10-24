@@ -71,8 +71,23 @@ export const IMAGES = {
   team4:        u('1455156218388-5e61b526818b', 300),
 }
 
-// Resolve either an IMAGES key or a raw URL (admin-added content uses URLs).
-export const img = (keyOrUrl) => IMAGES[keyOrUrl] || keyOrUrl || IMAGES.heroAlt
+// ── Google Drive links ──────────────────────────────────────────────────────────
+// Admins paste normal share links (https://drive.google.com/file/d/<ID>/view?usp=sharing).
+// The file must be shared as "Anyone with the link".
+const DRIVE_ID = /(?:drive\.google\.com\/(?:file\/d\/|open\?id=|uc\?(?:export=\w+&)?id=|thumbnail\?id=)|docs\.google\.com\/(?:uc\?(?:export=\w+&)?id=|file\/d\/))([\w-]{20,})/
+export const driveId = (url = '') => (String(url).match(DRIVE_ID) || [])[1] || null
+export const isDriveFolder = (url = '') => /drive\.google\.com\/drive\/(u\/\d\/)?folders\//.test(url)
+/** Direct image URL for a Drive file (served by Google's image CDN). */
+export const driveImage = (url, w = 1600) => {
+  const id = driveId(url)
+  return id ? `https://lh3.googleusercontent.com/d/${id}=w${w}` : url
+}
+/** Viewer / download links for a Drive file such as a PDF brochure. */
+export const driveView = (url) => (driveId(url) ? `https://drive.google.com/file/d/${driveId(url)}/view` : url)
+export const driveDownload = (url) => (driveId(url) ? `https://drive.google.com/uc?export=download&id=${driveId(url)}` : url)
 
-// Upsize an Unsplash URL for large placements (gallery, lightbox).
-export const large = (url, w = 1400) => url.replace(/w=\d+/, `w=${w}`)
+// Resolve an IMAGES key, a Google Drive link or any image URL.
+export const img = (keyOrUrl) => IMAGES[keyOrUrl] || driveImage(keyOrUrl) || IMAGES.heroAlt
+
+// Request a larger version for big placements (gallery, lightbox) — Unsplash (?w=) and Drive (=w).
+export const large = (url, w = 1400) => url.replace(/([?&]w=)\d+/, `$1${w}`).replace(/=w\d+$/, `=w${w}`)

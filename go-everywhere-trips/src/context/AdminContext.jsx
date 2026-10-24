@@ -1,35 +1,35 @@
-import { createContext, useContext, useState } from 'react'
+import { createContext, useCallback, useContext, useEffect, useState } from 'react'
+import { adminApi } from '../lib/api'
 
-// Demo-only auth: there is no backend, so anyone reading the bundle can see these.
-// Replace with a real auth provider before storing anything sensitive.
-export const DEMO_CREDENTIALS = { email: 'admin@get.com', password: 'admin123' }
-
+// Real server-side admin session (api/admin.php). Credentials live in site-config.php on the server.
 const AdminContext = createContext(null)
 
 export function AdminProvider({ children }) {
-  const [isAuthed, setIsAuthed] = useState(() => {
-    try {
-      return localStorage.getItem('get-admin') === 'true'
-    } catch {
-      return false
-    }
-  })
+  const [state, setState] = useState({ checked: false, isAuthed: false, csrf: null, email: null, configured: true, serverDown: false })
 
-  const login = (email, password) => {
-    const ok = email.trim().toLowerCase() === DEMO_CREDENTIALS.email && password === DEMO_CREDENTIALS.password
-    if (ok) {
-      localStorage.setItem('get-admin', 'true')
-      setIsAuthed(true)
-    }
-    return ok
+  const refresh = useCallback(async () => {
+    const r = await adminApi.me()
+    setState({ checked: true, isAuthed: !!r.admin, csrf: r.csrf || null, email: r.email || null, configured: r.configured !== false, serverDown: !r.ok })
+  }, [])
+
+  useEffect(() => {
+    // Only ask the server when someone is actually in the admin area.
+    if (window.location.pathname.startsWith('/admin')) refresh()
+    else setState((s) => ({ ...s, checked: false }))
+  }, [refresh])
+
+  const login = async (email, password) => {
+    const r = await adminApi.login(email, password)
+    if (r.ok) setState({ checked: true, isAuthed: true, csrf: r.csrf, email: r.email, configured: true, serverDown: false })
+    return r
   }
 
-  const logout = () => {
-    localStorage.removeItem('get-admin')
-    setIsAuthed(false)
+  const logout = async () => {
+    await adminApi.logout()
+    setState((s) => ({ ...s, isAuthed: false, csrf: null }))
   }
 
-  return <AdminContext.Provider value={{ isAuthed, login, logout }}>{children}</AdminContext.Provider>
+  return <AdminContext.Provider value={{ ...state, refresh, login, logout }}>{children}</AdminContext.Provider>
 }
 
 export const useAdmin = () => useContext(AdminContext)

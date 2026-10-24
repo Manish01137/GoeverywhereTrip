@@ -24,10 +24,7 @@ export default function PageLoader() {
           aria-label="Loading Go Everywhere Trips"
         >
           <div className="text-center">
-            <div className="text-5xl mb-3" aria-hidden="true">🏔️</div>
-            <div className="text-2xl font-extrabold text-deep dark:text-white">
-              Go Everywhere <span className="text-sky-brand">Trips</span>
-            </div>
+            <img src="/brand/logo-full-360.webp" alt="" width="360" height="230" className="mx-auto mb-1 h-auto w-56 rounded-2xl shadow-hover" />
             <div className="mt-5 mx-auto h-1.5 w-48 overflow-hidden rounded-pill bg-sky-light dark:bg-slate-800">
               <div className="h-full rounded-pill bg-sky-brand animate-loader-bar" />
             </div>

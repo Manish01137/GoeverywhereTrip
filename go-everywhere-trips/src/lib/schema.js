@@ -10,7 +10,7 @@ export const organization = (settings) => ({
   '@id': abs('/#organization'),
   name: SITE_NAME,
   url: abs('/'),
-  logo: abs('/favicon.svg'),
+  logo: abs('/brand/logo-square-512.png'),
   image: IMAGES.heroMain,
   slogan: 'Go Everywhere. Experience Everything.',
   description: 'Dehradun-based travel company running Himalayan treks, group tours, spiritual yatras and custom trips.',

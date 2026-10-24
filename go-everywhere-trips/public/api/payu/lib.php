@@ -10,27 +10,71 @@ const PAYU_URLS = [
 ];
 
 /**
- * Config lives OUTSIDE public_html so deploys never overwrite it and it can never be downloaded:
- *   /home/<user>/domains/<domain>/payu-config.php   (one level above public_html)
+ * site-config.php lives OUTSIDE public_html so deploys never overwrite it and it can never be downloaded:
+ *   /home/<user>/domains/<domain>/site-config.php   (one level above public_html)
  * In local dev (`npm run php`, docroot = public/) that is the project root.
  */
-function payu_config(): ?array {
+function site_config(): array {
+    static $cfg = null;
+    if ($cfg !== null) return $cfg;
     $docRoot = rtrim($_SERVER['DOCUMENT_ROOT'] ?? dirname(__DIR__, 2), '/');
-    foreach ([dirname($docRoot) . '/payu-config.php'] as $file) {
-        if (is_file($file)) {
-            $cfg = require $file;
-            if (is_array($cfg) && !empty($cfg['key']) && !empty($cfg['salt'])) {
-                return $cfg + ['mode' => 'test', 'advance_percent' => 30, 'notify_email' => '', 'site_url' => ''];
-            }
-        }
-    }
-    return null;
+    $file = dirname($docRoot) . '/site-config.php';
+    $loaded = is_file($file) ? require $file : [];
+    return $cfg = is_array($loaded) ? $loaded : [];
 }
 
-/** Trip prices and dates exported from src/data/trips.js at build time — the browser never decides the amount. */
+/** Active PayU credentials for the chosen mode, or null when not configured. */
+function payu_config(): ?array {
+    $cfg  = site_config();
+    $payu = $cfg['payu'] ?? [];
+    $mode = ($payu['mode'] ?? 'test') === 'live' ? 'live' : 'test';
+    $keys = $payu[$mode] ?? [];
+    if (empty($keys['key']) || empty($keys['salt'])) return null;
+    return [
+        'mode'            => $mode,
+        'key'             => trim($keys['key']),
+        'salt'            => trim($keys['salt']),
+        'advance_percent' => (int) ($payu['advance_percent'] ?? 30),
+        'notify_email'    => $cfg['notify_email'] ?? '',
+        'site_url'        => $cfg['site_url'] ?? '',
+    ];
+}
+
+/**
+ * Trip prices and dates the checkout is allowed to charge — the browser never decides the amount.
+ * Uses the live content saved from the admin panel when present, else the build-time catalog.json.
+ */
 function payu_catalog(): array {
+    $content = read_content();
+    if ($content && !empty($content['trips'])) {
+        $out = [];
+        foreach ($content['trips'] as $t) {
+            if (($t['status'] ?? 'Active') === 'Draft' || empty($t['slug']) || !isset($t['price'])) continue;
+            $out[$t['slug']] = ['name' => (string) $t['name'], 'price' => (float) $t['price'],
+                                'departures' => array_values(array_map(fn($d) => (string) ($d['date'] ?? ''), $t['departures'] ?? []))];
+        }
+        return $out;
+    }
     $json = @file_get_contents(__DIR__ . '/catalog.json');
     return $json ? (json_decode($json, true) ?: []) : [];
+}
+
+/** Private data folder (site content + backups), outside public_html when possible. */
+function data_dir(): string {
+    $docRoot = rtrim($_SERVER['DOCUMENT_ROOT'] ?? dirname(__DIR__, 2), '/');
+    $outside = dirname($docRoot) . '/site-data';
+    if (is_dir($outside) || @mkdir($outside, 0750, true)) return $outside;
+    $inside = __DIR__ . '/data/content';
+    if (!is_dir($inside)) @mkdir($inside, 0750, true);
+    return $inside;
+}
+
+/** Site content published from the admin panel (trips, blogs, reviews, settings), or null. */
+function read_content(): ?array {
+    $file = data_dir() . '/content.json';
+    if (!is_file($file)) return null;
+    $data = json_decode((string) file_get_contents($file), true);
+    return is_array($data) ? $data : null;
 }
 
 function site_base(array $cfg): string {
@@ -67,7 +111,7 @@ function clean(string $s, int $max): string {
 /** Transaction log (CSV) kept outside public_html when possible. */
 function log_dir(): string {
     $docRoot = rtrim($_SERVER['DOCUMENT_ROOT'] ?? dirname(__DIR__, 2), '/');
-    $outside = dirname($docRoot) . '/payu-logs';
+    $outside = dirname($docRoot) . '/site-logs';
     if (is_dir($outside) || @mkdir($outside, 0750, true)) return $outside;
     $inside = __DIR__ . '/data';
     if (!is_dir($inside)) @mkdir($inside, 0750, true);
@@ -75,7 +119,7 @@ function log_dir(): string {
 }
 
 function payu_log(array $row): void {
-    $file = log_dir() . '/transactions.csv';
+    $file = log_dir() . '/payments.csv';
     $new = !is_file($file);
     $fh = @fopen($file, 'a');
     if (!$fh) return;
@@ -87,7 +131,7 @@ function payu_log(array $row): void {
 }
 
 function already_logged(string $txnid, string $event): bool {
-    $file = log_dir() . '/transactions.csv';
+    $file = log_dir() . '/payments.csv';
     if (!is_file($file)) return false;
     $needle = ',' . $event . ',' . $txnid . ',';
     return str_contains((string) file_get_contents($file), $needle);

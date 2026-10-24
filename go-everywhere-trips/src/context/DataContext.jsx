@@ -1,15 +1,13 @@
-import { createContext, useCallback, useContext, useMemo } from 'react'
-import { trips as defaultTrips, withDefaults } from '../data/trips'
-import { blogs as defaultBlogs } from '../data/blogs'
-import { reviews as defaultReviews } from '../data/reviews'
-import { usePersistentState } from '../lib/storage'
+import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react'
+import { trips as builtInTrips, withDefaults } from '../data/trips'
+import { blogs as builtInBlogs } from '../data/blogs'
+import { reviews as builtInReviews } from '../data/reviews'
+import live from '../data/live-content.json' // last published content, pulled in at build time (scripts/sync-content.mjs)
+import { fetchContent, track } from '../lib/api'
+import { withPopupDefaults } from '../data/popup'
 
-// Demo CMS: everything the admin panel edits lives in localStorage and feeds the public site.
-
-// Bump when the shape of stored data changes so old browser copies are ignored.
-const V = 'v2'
-export const DATA_KEYS = ['trips', 'blogs', 'reviews', 'leads', 'settings'].map((k) => `get-${k}-${V}`)
-const [K_TRIPS, K_BLOGS, K_REVIEWS, K_LEADS, K_SETTINGS] = DATA_KEYS
+// Content source of truth: the server (api/content.php, written by the admin panel).
+// Until it loads — or if nothing has been published yet — the site uses the built-in content.
 
 export const DEFAULT_SETTINGS = {
   heroTitle1: 'Book Your',
@@ -23,53 +21,78 @@ export const DEFAULT_SETTINGS = {
   address: 'Rajpur Road, Dehradun, Uttarakhand 248001',
 }
 
-const SEED_LEADS = [
-  { id: 101, source: 'custom',   name: 'Ritika Verma',  phone: '9876543210', email: 'ritika@example.com', enquiry: 'Custom trip · Spiti · 6 people · Deluxe',   date: '2026-09-29T10:12:00', status: 'New' },
-  { id: 102, source: 'contact',  name: 'Manav Chauhan', phone: '9812345678', email: 'manav@example.com',  enquiry: 'Corporate offsite for 25 people in Rishikesh', date: '2026-09-28T16:40:00', status: 'Contacted' },
-  { id: 103, source: 'whatsapp', name: '—',             phone: '—',          email: '—',                  enquiry: 'Trip card · Harshil Valley Group Trek',      date: '2026-09-28T09:05:00', status: 'New' },
-  { id: 104, source: 'custom',   name: 'Deepak Rana',   phone: '9998887776', email: 'deepak@example.com', enquiry: 'Custom trip · Rajasthan · 4 people · Luxury', date: '2026-09-26T13:20:00', status: 'Converted' },
-  { id: 105, source: 'contact',  name: 'Isha Kapoor',   phone: '9090909090', email: 'isha@example.com',   enquiry: 'Do you have a women-only Chopta batch?',     date: '2026-09-25T19:55:00', status: 'Contacted' },
-]
+const BUILT_IN = {
+  trips: live.trips || builtInTrips,
+  blogs: live.blogs || builtInBlogs,
+  reviews: live.reviews || builtInReviews,
+  settings: { ...DEFAULT_SETTINGS, ...(live.settings || {}) },
+}
 
 const DataContext = createContext(null)
 
 export function DataProvider({ children }) {
-  const [rawTrips, setTrips] = usePersistentState(K_TRIPS, defaultTrips)
-  const [blogs, setBlogs] = usePersistentState(K_BLOGS, defaultBlogs)
-  const [reviews, setReviews] = usePersistentState(K_REVIEWS, defaultReviews)
-  const [leads, setLeads] = usePersistentState(K_LEADS, SEED_LEADS)
-  const [storedSettings, setSettings] = usePersistentState(K_SETTINGS, DEFAULT_SETTINGS)
+  const [content, setContent] = useState(BUILT_IN)
+  const [source, setSource] = useState('loading') // loading | server | built-in | offline
+  const [rev, setRev] = useState(0) // bumps on every admin edit → AdminLayout publishes
+  const loaded = useRef(false)
 
-  const settings = useMemo(() => ({ ...DEFAULT_SETTINGS, ...storedSettings }), [storedSettings])
-  const trips = useMemo(() => rawTrips.map(withDefaults), [rawTrips])
+  useEffect(() => {
+    // Old demo builds kept content in localStorage — clear it so it can't shadow the server.
+    try { ['trips', 'blogs', 'reviews', 'leads', 'settings'].forEach((k) => localStorage.removeItem(`get-${k}-v2`)) } catch { /* ignore */ }
+    fetchContent().then(({ state, data }) => {
+      if (loaded.current) return
+      loaded.current = true
+      if (state === 'ok' && Array.isArray(data?.trips)) {
+        setContent({ trips: data.trips, blogs: data.blogs || [], reviews: data.reviews || [], settings: { ...DEFAULT_SETTINGS, ...(data.settings || {}) } })
+        setSource('server')
+      } else setSource(state === 'empty' ? 'built-in' : 'offline')
+    })
+  }, [])
+
+  // Admin setters: same API as useState setters, and they mark content as changed.
+  const setter = (key) => (next) => {
+    setContent((c) => ({ ...c, [key]: typeof next === 'function' ? next(c[key]) : next }))
+    setRev((r) => r + 1)
+  }
+  const setTrips = useCallback(setter('trips'), [])
+  const setBlogs = useCallback(setter('blogs'), [])
+  const setReviews = useCallback(setter('reviews'), [])
+  const setSettings = useCallback(setter('settings'), [])
+  const replaceAll = useCallback((data) => setContent({ trips: data.trips, blogs: data.blogs || [], reviews: data.reviews || [], settings: { ...DEFAULT_SETTINGS, ...(data.settings || {}) } }), [])
+
+  const settings = useMemo(() => ({ ...DEFAULT_SETTINGS, ...content.settings }), [content.settings])
+  const popup = useMemo(() => withPopupDefaults(content.settings?.popup), [content.settings])
+  const trips = useMemo(() => content.trips.map(withDefaults), [content.trips])
   const publicTrips = useMemo(() => trips.filter((t) => t.status !== 'Draft'), [trips])
-  const publicBlogs = useMemo(() => blogs.filter((b) => b.status !== 'Draft'), [blogs])
-  const publicReviews = useMemo(() => reviews.filter((r) => r.status !== 'Hidden'), [reviews])
+  const publicBlogs = useMemo(() => content.blogs.filter((b) => b.status !== 'Draft'), [content.blogs])
+  const publicReviews = useMemo(() => content.reviews.filter((r) => r.status !== 'Hidden'), [content.reviews])
 
-  const addLead = useCallback(
-    (lead) => setLeads((ls) => [{ id: Date.now(), date: new Date().toISOString(), status: 'New', ...lead }, ...ls]),
-    [setLeads],
-  )
+  // Sends an enquiry to /api/lead.php (emails the team + logs it). Resolves to the server reply.
+  const addLead = useCallback((lead) => {
+    if (lead.source === 'whatsapp') { track(lead.enquiry); return Promise.resolve({ ok: true }) }
+    return fetch('/api/lead.php', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ ...lead, page: window.location.href }),
+      keepalive: true,
+    })
+      .then((r) => r.json())
+      .catch(() => ({ ok: false, error: 'network' }))
+  }, [])
 
   const waLink = useCallback(
-    (text = 'Hi! I want to know more about your trips') =>
-      `https://wa.me/${settings.whatsapp}?text=${encodeURIComponent(text)}`,
+    (text = 'Hi! I want to know more about your trips') => `https://wa.me/${settings.whatsapp}?text=${encodeURIComponent(text)}`,
     [settings.whatsapp],
   )
-
-  // Fire-and-forget click tracking so WhatsApp enquiries show up in Admin → Leads.
-  const trackWhatsApp = useCallback(
-    (context) => addLead({ source: 'whatsapp', name: '—', phone: '—', email: '—', enquiry: context }),
-    [addLead],
-  )
+  const trackWhatsApp = useCallback((context) => track(context), [])
 
   const value = {
-    trips, publicTrips, tripRecords: rawTrips, setTrips,
-    blogs, publicBlogs, setBlogs,
-    reviews, publicReviews, setReviews,
-    leads, setLeads, addLead,
-    settings, setSettings,
-    waLink, trackWhatsApp,
+    content, source, rev, replaceAll,
+    trips, publicTrips, tripRecords: content.trips, setTrips,
+    blogs: content.blogs, publicBlogs, setBlogs,
+    reviews: content.reviews, publicReviews, setReviews,
+    settings, setSettings, popup,
+    addLead, waLink, trackWhatsApp,
   }
   return <DataContext.Provider value={value}>{children}</DataContext.Provider>
 }

@@ -1,36 +1,46 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Navigate, useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
-import { Eye, EyeOff, Lock } from 'lucide-react'
+import { Eye, EyeOff, Loader2, Lock } from 'lucide-react'
 import Seo from '../components/ui/Seo'
-import { Logo } from '../components/layout/Navbar'
-import { DEMO_CREDENTIALS, useAdmin } from '../context/AdminContext'
+import { useAdmin } from '../context/AdminContext'
 
 export default function AdminLogin() {
-  const { isAuthed, login } = useAdmin()
+  const { checked, isAuthed, configured, serverDown, refresh, login } = useAdmin()
   const navigate = useNavigate()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [show, setShow] = useState(false)
   const [error, setError] = useState('')
+  const [busy, setBusy] = useState(false)
 
+  useEffect(() => { if (!checked) refresh() }, [checked, refresh])
   if (isAuthed) return <Navigate to="/admin/dashboard" replace />
 
-  const submit = (e) => {
+  const submit = async (e) => {
     e.preventDefault()
-    if (login(email, password)) navigate('/admin/dashboard', { replace: true })
-    else setError('Incorrect email or password')
+    setBusy(true)
+    const r = await login(email, password)
+    setBusy(false)
+    if (r.ok) navigate('/admin/dashboard', { replace: true })
+    else setError(r.error || 'Could not sign in')
   }
 
   return (
     <main id="main" className="flex min-h-screen items-center justify-center bg-sky-xlight p-4 dark:bg-slate-950">
       <Seo title="Admin Login" noindex />
       <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="w-full max-w-md overflow-hidden rounded-2xl bg-white shadow-hover dark:bg-slate-900 dark:ring-1 dark:ring-slate-700">
-        <div className="bg-deep px-8 py-6">
-          <Logo light />
-          <p className="mt-2 flex items-center gap-1.5 text-sm text-sky-100/80"><Lock size={14} /> Admin panel</p>
+        <div className="bg-deep px-8 py-6 text-center">
+          <img src="/brand/logo-full-360.webp" alt="Go Everywhere Trips" width="360" height="230" className="mx-auto h-auto w-48" />
+          <p className="mt-2 flex items-center justify-center gap-1.5 text-sm text-sky-100/80"><Lock size={14} /> Admin panel</p>
         </div>
         <form onSubmit={submit} className="space-y-5 p-8">
+          {checked && serverDown && (
+            <p role="alert" className="rounded-lg bg-amber-50 px-3 py-2 text-sm text-amber-800">Can’t reach the server. On your computer, run <code>npm run php</code> alongside <code>npm run dev</code>.</p>
+          )}
+          {checked && !serverDown && !configured && (
+            <p role="alert" className="rounded-lg bg-amber-50 px-3 py-2 text-sm text-amber-800">Admin login isn’t set up yet — add <code>admin_email</code> and <code>admin_password</code> to <code>site-config.php</code> on the server.</p>
+          )}
           <div>
             <label htmlFor="admin-email" className="label">Email</label>
             <input id="admin-email" type="email" autoComplete="username" value={email} onChange={(e) => { setEmail(e.target.value); setError('') }} className="input" required />
@@ -45,12 +55,9 @@ export default function AdminLogin() {
             </div>
           </div>
           {error && <p role="alert" className="rounded-lg bg-red-50 px-3 py-2 text-sm font-semibold text-red-600 dark:bg-red-500/10">{error}</p>}
-          <motion.button whileTap={{ scale: 0.97 }} type="submit" className="w-full rounded-pill bg-sky-brand py-3 font-bold text-white hover:bg-sky-dark">Sign In</motion.button>
-          <div className="rounded-xl border border-dashed border-sky-brand/50 bg-sky-xlight p-4 text-sm dark:bg-slate-800">
-            <p className="font-semibold text-deep dark:text-white">Demo credentials</p>
-            <p className="mt-1 text-slate-600 dark:text-slate-300">{DEMO_CREDENTIALS.email} / {DEMO_CREDENTIALS.password}</p>
-            <button type="button" onClick={() => { setEmail(DEMO_CREDENTIALS.email); setPassword(DEMO_CREDENTIALS.password) }} className="mt-2 text-xs font-bold text-sky-brand hover:underline">Fill for me</button>
-          </div>
+          <motion.button whileTap={{ scale: 0.97 }} type="submit" disabled={busy} className="flex w-full items-center justify-center gap-2 rounded-pill bg-sky-brand py-3 font-bold text-white hover:bg-sky-dark disabled:opacity-70">
+            {busy && <Loader2 size={18} className="animate-spin" />} Sign In
+          </motion.button>
         </form>
       </motion.div>
     </main>

@@ -79,7 +79,7 @@ export default function AdminBlogs() {
             <Field id="b-cat" label="Category"><select id="b-cat" value={form.category} onChange={set('category')} className="input">{BLOG_CATEGORIES.filter((c) => c !== 'All').map((c) => <option key={c}>{c}</option>)}</select></Field>
             <Field id="b-status" label="Status"><select id="b-status" value={form.status} onChange={set('status')} className="input"><option>Published</option><option>Draft</option></select></Field>
           </div>
-          <Field id="b-img" label="Image URL"><input id="b-img" value={form.image} onChange={set('image')} className="input" placeholder="https://images.unsplash.com/…" /></Field>
+          <Field id="b-img" label="Image URL"><input id="b-img" value={form.image} onChange={set('image')} className="input" placeholder="Google Drive or image link" /></Field>
           {form.image && <Img src={form.image} alt="Preview" className="h-32 w-full rounded-xl object-cover" />}
           <Field id="b-ex" label="Excerpt *"><textarea id="b-ex" rows={2} value={form.excerpt} onChange={set('excerpt')} className="input resize-none" /></Field>
           <Field id="b-content" label="Content (blank line between paragraphs)"><textarea id="b-content" rows={10} value={form.content} onChange={set('content')} className="input" /></Field>

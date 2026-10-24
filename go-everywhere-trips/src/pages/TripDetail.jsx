@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
 import { Link, useLocation, useParams, useSearchParams } from 'react-router-dom'
 import {
-  BedDouble, Bus, Calendar, Check, ChevronDown, ChevronLeft, ChevronRight, Clock, Copy, Images, MapPin,
+  BedDouble, Bus, Calendar, Download, Check, ChevronDown, ChevronLeft, ChevronRight, Clock, Copy, Images, MapPin,
   Minus, Mountain, Phone, Plus, Share2, ShieldCheck, Sparkles, Star, Sun, Tent, Trees, Users, Waves, X, XCircle,
 } from 'lucide-react'
 import Seo from '../components/ui/Seo'
@@ -19,10 +19,13 @@ import CheckoutModal from '../components/booking/CheckoutModal'
 import { WhatsAppIcon } from '../components/ui/BrandIcons'
 import { useData } from '../context/DataContext'
 import { CANCELLATION_POLICY } from '../data/trips'
-import { img, large } from '../data/images'
+import { driveView, img, large } from '../data/images'
 import { fmtDate, inr, seatTone, upcoming } from '../lib/format'
 import { ADVANCE_PERCENT, SITE_URL } from '../site.config'
 import { breadcrumbs, faqPage, touristTrip } from '../lib/schema'
+
+// Accepts youtube.com/watch?v=, youtu.be/, /shorts/ and /embed/ links.
+const youtubeId = (url = '') => (String(url).match(/(?:youtu\.be\/|v=|\/shorts\/|\/embed\/)([\w-]{11})/) || [])[1]
 
 const HIGHLIGHT_ICONS = [Mountain, Trees, Waves, Tent, Sun, Sparkles]
 
@@ -140,10 +143,30 @@ export default function TripDetail() {
                 <span className="inline-flex items-center gap-1.5"><Stars rating={trip.rating} /> <strong>{trip.rating}</strong> ({trip.reviews} reviews)</span>
               </div>
               {trip.description && <p className="mt-4 leading-relaxed text-slate-600 dark:text-slate-300">{trip.description}</p>}
+              {trip.brochure && (
+                <a href={driveView(trip.brochure)} target="_blank" rel="noopener noreferrer" className="mt-4 inline-flex items-center gap-2 rounded-pill border-2 border-sky-brand px-5 py-2.5 text-sm font-bold text-sky-dark transition-colors hover:bg-sky-brand hover:text-white dark:text-sky-300">
+                  <Download size={16} aria-hidden="true" /> Download itinerary (PDF)
+                </a>
+              )}
             </header>
 
             {/* Mobile booking card */}
             <div className="lg:hidden"><BookingCard id="m" {...booking} /></div>
+
+            {youtubeId(trip.video) && (
+              <Block title="Watch the Trip">
+                <div className="relative aspect-video overflow-hidden rounded-2xl bg-slate-900">
+                  <iframe
+                    src={`https://www.youtube-nocookie.com/embed/${youtubeId(trip.video)}?rel=0`}
+                    title={`${trip.name} video`}
+                    loading="lazy"
+                    allow="accelerometer; encrypted-media; gyroscope; picture-in-picture"
+                    allowFullScreen
+                    className="absolute inset-0 h-full w-full border-0"
+                  />
+                </div>
+              </Block>
+            )}
 
             {/* 4. Highlights */}
             <Block title="Trip Highlights">
@@ -465,6 +488,11 @@ function BookingCard({ id, trip, dates, date, setDate, people, setPeople }) {
       <a href={waLink(`Hi, I'm interested in ${trip.name}`)} target="_blank" rel="noopener noreferrer" onClick={() => trackWhatsApp(`Trip enquiry · ${trip.name}`)} className="flex w-full items-center justify-center gap-2 rounded-pill bg-green-500 py-3 font-bold text-white transition-colors hover:bg-green-600">
         <WhatsAppIcon size={18} /> Enquire on WhatsApp
       </a>
+      {trip.brochure && (
+        <a href={driveView(trip.brochure)} target="_blank" rel="noopener noreferrer" className="flex w-full items-center justify-center gap-2 rounded-pill border-2 border-sky-brand py-2.5 text-sm font-bold text-sky-dark hover:bg-sky-light dark:text-sky-300 dark:hover:bg-slate-700">
+          <Download size={16} aria-hidden="true" /> Itinerary PDF
+        </a>
+      )}
       <p className="flex items-center justify-center gap-1.5 text-xs text-slate-500"><Calendar size={12} aria-hidden="true" />Pay just {ADVANCE_PERCENT}% now to reserve · secured by PayU</p>
 
       <div className="flex items-center justify-center gap-2 border-t border-slate-100 pt-4 text-sm text-slate-500 dark:border-slate-700">

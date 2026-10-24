@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from 'react'
+import { createPortal } from 'react-dom'
 import { AnimatePresence, motion } from 'framer-motion'
 import { Link, NavLink, useLocation } from 'react-router-dom'
 import { ChevronDown, Menu, Moon, Phone, Sun, X } from 'lucide-react'
@@ -22,12 +23,22 @@ const LINKS = [
   { label: 'Contact', to: '/contact' },
 ]
 
+const item = { hidden: { opacity: 0, x: 24 }, show: { opacity: 1, x: 0 } }
+
+// Brand lockup: the emblem from the logo + the "GO EVERYWHERE — TRIPS" wordmark in the logo's style.
 export function Logo({ light = false, className = '' }) {
+  const word = light ? 'text-white' : 'text-deep dark:text-white'
+  const sun = light ? 'text-sun' : 'text-sun-dark dark:text-sun'
+  const rule = light ? 'bg-sun' : 'bg-sun-dark dark:bg-sun'
   return (
-    <Link to="/" className={`flex items-center gap-2 font-extrabold text-xl tracking-tight ${className}`} aria-label="Go Everywhere Trips — home">
-      <span aria-hidden="true">🏔️</span>
-      <span className={light ? 'text-white' : 'text-deep dark:text-white'}>Go Everywhere</span>
-      <span className="text-sky-brand">Trips</span>
+    <Link to="/" className={`flex shrink-0 items-center gap-2.5 ${className}`} aria-label="Go Everywhere Trips — home">
+      <img src="/brand/logo-mark-128.webp" alt="" width="40" height="40" className="h-10 w-10 rounded-[10px] shadow-sm" />
+      <span className="leading-none" aria-hidden="true">
+        <span className={`block whitespace-nowrap text-[15px] font-black tracking-tight sm:text-[17px] ${word}`}>GO EVERYWHERE</span>
+        <span className={`mt-1 flex items-center gap-1.5 text-[10px] font-black tracking-[0.3em] sm:text-[11px] ${sun}`}>
+          <span className={`h-[2px] flex-1 rounded ${rule}`} />TRIPS<span className={`h-[2px] flex-1 rounded ${rule}`} />
+        </span>
+      </span>
     </Link>
   )
 }
@@ -146,50 +157,68 @@ export default function Navbar() {
         </div>
       </nav>
 
-      <AnimatePresence>
-        {open && (
-          <motion.div
-            initial={{ x: '100%' }}
-            animate={{ x: 0 }}
-            exit={{ x: '100%' }}
-            transition={{ type: 'spring', damping: 28, stiffness: 260 }}
-            ref={menuRef}
-            className="fixed inset-0 z-[60] flex flex-col bg-white dark:bg-slate-950 lg:hidden"
-            role="dialog"
-            aria-modal="true"
-            aria-label="Menu"
-          >
-            <div className="flex h-16 items-center justify-between px-4 border-b border-slate-100 dark:border-slate-800">
-              <Logo />
-              <button type="button" onClick={() => setOpen(false)} aria-label="Close menu" className="p-2 rounded-full hover:bg-sky-light dark:hover:bg-slate-800">
-                <X size={24} />
-              </button>
-            </div>
-            <motion.ul
-              className="flex-1 overflow-y-auto px-6 py-6 space-y-1"
-              initial="hidden"
-              animate="show"
-              variants={{ hidden: {}, show: { transition: { staggerChildren: 0.05, delayChildren: 0.1 } } }}
+      {/* Portal: the header's backdrop-blur would otherwise trap this fixed panel inside the 64px bar. */}
+      {createPortal(
+        <AnimatePresence>
+          {open && (
+            <motion.div
+              initial={{ x: '100%' }}
+              animate={{ x: 0 }}
+              exit={{ x: '100%' }}
+              transition={{ type: 'spring', damping: 28, stiffness: 260 }}
+              ref={menuRef}
+              className="fixed inset-0 z-[80] flex h-[100dvh] flex-col bg-white dark:bg-slate-950 lg:hidden"
+              role="dialog"
+              aria-modal="true"
+              aria-label="Menu"
             >
-              {[{ label: 'All Trips', to: '/trips' }, ...TRIP_MENU, ...LINKS].map((l) => (
-                <motion.li key={l.label} variants={{ hidden: { opacity: 0, x: 30 }, show: { opacity: 1, x: 0 } }}>
-                  <Link to={l.to} onClick={() => setOpen(false)} className="block py-3 text-xl font-bold text-deep border-b border-slate-100 hover:text-sky-brand dark:text-white dark:border-slate-800">
-                    {l.label}
-                  </Link>
-                </motion.li>
-              ))}
-            </motion.ul>
-            <div className="grid grid-cols-2 gap-3 p-4 border-t border-slate-100 dark:border-slate-800">
-              <a href={waLink()} target="_blank" rel="noopener noreferrer" onClick={() => trackWhatsApp('Mobile menu')} className="flex items-center justify-center gap-2 rounded-pill bg-green-500 py-3 font-bold text-white">
-                <WhatsAppIcon size={18} /> WhatsApp
-              </a>
-              <Link to="/trips" onClick={() => setOpen(false)} className="flex items-center justify-center rounded-pill bg-sky-brand py-3 font-bold text-white">
-                Book Now
-              </Link>
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+              <div className="flex h-16 shrink-0 items-center justify-between border-b border-slate-100 px-4 dark:border-slate-800">
+                <Logo />
+                <button type="button" onClick={() => setOpen(false)} aria-label="Close menu" className="rounded-full p-2 text-deep hover:bg-sky-light dark:text-white dark:hover:bg-slate-800">
+                  <X size={24} />
+                </button>
+              </div>
+              <motion.div
+                className="flex-1 overflow-y-auto overscroll-contain px-5 py-5"
+                initial="hidden"
+                animate="show"
+                variants={{ hidden: {}, show: { transition: { staggerChildren: 0.04, delayChildren: 0.08 } } }}
+              >
+                <motion.p variants={item} className="mb-2 text-xs font-bold uppercase tracking-[0.2em] text-slate-400">Trips</motion.p>
+                <motion.div variants={item} className="mb-5 flex flex-wrap gap-2">
+                  {[{ label: 'All Trips', to: '/trips' }, ...TRIP_MENU.filter((m) => m.label !== 'Customised')].map((m) => (
+                    <Link key={m.label} to={m.to} className="rounded-pill bg-sky-light px-4 py-2 text-sm font-semibold text-sky-dark dark:bg-slate-800 dark:text-sky-300">
+                      {m.label}
+                    </Link>
+                  ))}
+                </motion.div>
+                <ul>
+                  {[{ label: 'Customise Your Trip', to: '/custom-trip' }, ...LINKS].map((l) => (
+                    <motion.li key={l.label} variants={item}>
+                      <Link to={l.to} onClick={() => setOpen(false)} className="flex items-center justify-between border-b border-slate-100 py-3.5 text-lg font-bold text-deep hover:text-sky-brand dark:border-slate-800 dark:text-white">
+                        {l.label} <ChevronDown size={18} className="-rotate-90 text-slate-300" aria-hidden="true" />
+                      </Link>
+                    </motion.li>
+                  ))}
+                </ul>
+                <motion.a variants={item} href={`tel:+${settings.whatsapp}`} className="mt-5 flex items-center gap-3 rounded-2xl bg-slate-50 p-3 dark:bg-slate-900">
+                  <span className="flex h-10 w-10 items-center justify-center rounded-full bg-sky-brand text-white"><Phone size={18} aria-hidden="true" /></span>
+                  <span className="leading-tight"><span className="block text-xs text-slate-500">Call us</span><span className="font-bold text-slate-900 dark:text-white">{settings.phoneDisplay}</span></span>
+                </motion.a>
+              </motion.div>
+              <div className="grid shrink-0 grid-cols-2 gap-3 border-t border-slate-100 p-4 pb-[max(1rem,env(safe-area-inset-bottom))] dark:border-slate-800">
+                <a href={waLink()} target="_blank" rel="noopener noreferrer" onClick={() => trackWhatsApp('Mobile menu')} className="flex items-center justify-center gap-2 rounded-pill bg-green-500 py-3 font-bold text-white">
+                  <WhatsAppIcon size={18} /> WhatsApp
+                </a>
+                <Link to="/trips" onClick={() => setOpen(false)} className="flex items-center justify-center rounded-pill bg-sky-brand py-3 font-bold text-white">
+                  Book Now
+                </Link>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>,
+        document.body,
+      )}
     </header>
   )
 }

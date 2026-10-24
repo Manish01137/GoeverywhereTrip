@@ -1,6 +1,6 @@
 // Exports trip prices + departure dates for the PHP checkout so amounts are decided server-side.
 import { writeFileSync } from 'node:fs'
-import { trips } from '../src/data/trips.js'
+import { trips } from './content-source.mjs'
 
 const catalog = Object.fromEntries(
   trips

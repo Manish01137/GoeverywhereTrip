@@ -10,7 +10,7 @@
     "preview": "vite preview",
     "zip": "npm run build && rm -f hostinger-upload.zip && cd dist && zip -r -X -q ../hostinger-upload.zip . -x '*.DS_Store' 'api/payu/data/*' && cd .. && echo '\u2705 hostinger-upload.zip ready \u2014 upload it to public_html and extract'",
     "php": "php -S localhost:8000 -t public",
-    "prebuild": "node scripts/build-catalog.mjs",
+    "prebuild": "node scripts/sync-content.mjs && node scripts/build-catalog.mjs",
     "postbuild": "node scripts/postbuild.mjs"
   },
   "dependencies": {

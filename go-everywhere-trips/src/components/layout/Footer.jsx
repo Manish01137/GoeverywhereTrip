@@ -1,7 +1,7 @@
 import { Link } from 'react-router-dom'
 import { Mail, MapPin, Phone } from 'lucide-react'
 import { InstagramIcon, WhatsAppIcon, YouTubeIcon } from '../ui/BrandIcons'
-import { Logo, TRIP_MENU } from './Navbar'
+import { TRIP_MENU } from './Navbar'
 import { useData } from '../../context/DataContext'
 
 const QUICK = [
@@ -24,7 +24,9 @@ export default function Footer() {
     <footer className="bg-deep text-sky-100 dark:bg-deep-dark">
       <div className="container-x grid gap-10 py-14 sm:grid-cols-2 lg:grid-cols-4">
         <div>
-          <Logo light />
+          <Link to="/" aria-label="Go Everywhere Trips — home" className="inline-block">
+            <img src="/brand/logo-full-360.webp" alt="Go Everywhere Trips" width="360" height="230" loading="lazy" className="h-auto w-52" />
+          </Link>
           <p className="mt-4 text-sm leading-relaxed text-sky-100/80">
             Go Everywhere Trips is a Dehradun-based travel company running small-group treks, road trips and spiritual yatras across the Himalaya and beyond.
           </p>

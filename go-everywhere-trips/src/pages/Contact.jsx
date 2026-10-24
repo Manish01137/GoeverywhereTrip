@@ -27,7 +27,10 @@ export default function Contact() {
     setErrors((er) => ({ ...er, [e.target.name]: undefined }))
   }
 
-  const onSubmit = (e) => {
+  const [sending, setSending] = useState(false)
+  const [sendError, setSendError] = useState(false)
+
+  const onSubmit = async (e) => {
     e.preventDefault()
     const er = {}
     if (!form.name.trim()) er.name = 'Please tell us your name'
@@ -36,8 +39,12 @@ export default function Contact() {
     if (!form.message.trim()) er.message = 'Add a short message'
     setErrors(er)
     if (Object.keys(er).length) return
-    addLead({ source: 'contact', name: form.name, phone: form.phone, email: form.email, enquiry: [form.subject, form.message].filter(Boolean).join(' — ') })
-    setSent(true)
+    setSending(true)
+    setSendError(false)
+    const res = await addLead({ source: 'contact', name: form.name, phone: form.phone, email: form.email, enquiry: [form.subject, form.message].filter(Boolean).join(' — ') })
+    setSending(false)
+    if (res?.ok) setSent(true)
+    else setSendError(true)
   }
 
   const details = [
@@ -72,8 +79,13 @@ export default function Contact() {
               <Field id="email" label="Email *" error={errors.email}><input id="email" name="email" type="email" autoComplete="email" value={form.email} onChange={onChange} className="input" placeholder="you@example.com" /></Field>
               <Field id="subject" label="Subject"><input id="subject" name="subject" value={form.subject} onChange={onChange} className="input" placeholder="e.g. Chopta trek in December" /></Field>
               <Field id="message" label="Message *" error={errors.message}><textarea id="message" name="message" rows={5} value={form.message} onChange={onChange} className="input resize-none" placeholder="Tell us your dates, group size and what you’re dreaming of…" /></Field>
-              <Button type="submit" size="lg" className="w-full">
-                <Send size={18} aria-hidden="true" /> Send Message
+              {sendError && (
+                <p role="alert" className="rounded-xl bg-red-50 p-3 text-sm text-red-700 dark:bg-red-500/10 dark:text-red-300">
+                  Couldn’t send your message just now. Please <a href={waLink(`Hi! I'm ${form.name}. ${form.message}`)} target="_blank" rel="noopener noreferrer" className="font-bold underline">send it on WhatsApp</a> instead.
+                </p>
+              )}
+              <Button type="submit" size="lg" className="w-full" disabled={sending}>
+                <Send size={18} aria-hidden="true" /> {sending ? 'Sending…' : 'Send Message'}
               </Button>
             </form>
           )}

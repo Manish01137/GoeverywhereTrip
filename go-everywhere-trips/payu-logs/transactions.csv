@@ -1,0 +1,3 @@
+time,event,txnid,status,amount,trip,date,people,plan,name,email,phone,payu_id,note
+2026-10-13T15:38:29+05:30,initiated,GET26101315382955A107,,7499.00,manali-kasol-group-tour,2026-11-14,2,advance,"Manish Beniwal",manishbeniwal349@gmail.com,8209978891,,
+2026-10-13T15:40:43+05:30,failed,GET26101315382955A107,failure,7499.00,manali-kasol-group-tour,2026-11-14,2,advance,"Manish Beniwal",manishbeniwal349@gmail.com,8209978891,20000010355,browser

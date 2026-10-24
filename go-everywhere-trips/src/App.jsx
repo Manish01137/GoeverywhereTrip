@@ -4,6 +4,7 @@ import PageLoader from './components/ui/PageLoader'
 import ErrorBoundary from './components/ui/ErrorBoundary'
 import PublicLayout from './components/layout/PublicLayout'
 import { takeBootHtml } from './lib/prerender'
+import LeadPopup from './components/layout/LeadPopup'
 
 const Home        = lazy(() => import('./pages/Home'))
 const Trips       = lazy(() => import('./pages/Trips'))
@@ -34,6 +35,7 @@ export default function App() {
   return (
     <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
       <PageLoader />
+      <LeadPopup />
       <ErrorBoundary>
         <Suspense fallback={<BootFallback />}>
           <Routes>

@@ -73,12 +73,19 @@ export default function CustomTrip() {
 
   const summary = `Custom trip · ${where} · ${data.people} people · ${data.hotel} · ${data.vehicle}${data.from ? ` · ${fmtDate(data.from)}` : ''}${data.to ? ` → ${fmtDate(data.to)}` : ''} · Budget ${inr(data.budget)}/person${data.activities.length ? ` · ${data.activities.join(', ')}` : ''}${data.notes ? ` · Notes: ${data.notes}` : ''}`
 
-  const submit = (e) => {
+  const [sending, setSending] = useState(false)
+  const [sendError, setSendError] = useState(false)
+
+  const submit = async (e) => {
     e.preventDefault()
     if (step < 3) return go(step + 1) // Enter key on an earlier step advances instead of submitting
     if (!validate(3)) return
-    addLead({ source: 'custom', name: data.name, phone: data.phone, email: data.email || '—', enquiry: summary })
-    setDone(true)
+    setSending(true)
+    setSendError(false)
+    const res = await addLead({ source: 'custom', name: data.name, phone: data.phone, email: data.email || '—', enquiry: summary })
+    setSending(false)
+    if (res?.ok) setDone(true)
+    else setSendError(true)
   }
 
   const progress = `${(step / STEPS.length) * 100}%`
@@ -224,6 +231,11 @@ export default function CustomTrip() {
                   </motion.div>
                 </AnimatePresence>
 
+                {sendError && (
+                  <p role="alert" className="mx-6 mb-2 rounded-xl bg-red-50 p-3 text-sm text-red-700 dark:bg-red-500/10 dark:text-red-300">
+                    Couldn’t send your request just now. Please <a href={waLink(`Hi! ${summary}`)} target="_blank" rel="noopener noreferrer" className="font-bold underline">send it on WhatsApp</a> instead.
+                  </p>
+                )}
                 <div className="flex items-center justify-between border-t border-slate-100 p-6 dark:border-slate-700">
                   {step > 1 ? (
                     <Button variant="ghost" onClick={() => go(step - 1)}><ArrowLeft size={16} /> Back</Button>
@@ -231,7 +243,7 @@ export default function CustomTrip() {
                   {step < 3 ? (
                     <Button key="next" onClick={() => go(step + 1)}>Next <ArrowRight size={16} /></Button>
                   ) : (
-                    <Button key="submit" type="submit">Get My Itinerary <ArrowRight size={16} /></Button>
+                    <Button key="submit" type="submit" disabled={sending}>{sending ? 'Sending…' : <>Get My Itinerary <ArrowRight size={16} /></>}</Button>
                   )}
                 </div>
               </form>

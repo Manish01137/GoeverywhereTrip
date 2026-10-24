@@ -27,7 +27,10 @@ dist-ssr
 hostinger-upload.zip
 
 # PayU — secrets, logs and generated catalog
-payu-config.php
-payu-logs/
+site-config.php
+site-logs/
 public/api/payu/data/
 public/api/payu/catalog.json
+
+# Server data created by the admin panel during local testing
+site-data/

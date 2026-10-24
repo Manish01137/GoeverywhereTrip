@@ -1,7 +1,7 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
 import { Link, Navigate, NavLink, Route, Routes, useLocation } from 'react-router-dom'
-import { CalendarDays, ExternalLink, FileText, LayoutDashboard, LogOut, Map, Menu, MessageSquareQuote, Moon, Settings, Sun, Users, X } from 'lucide-react'
+import { AlertTriangle, BellRing, CalendarDays, CheckCircle2, CloudUpload, ExternalLink, Loader2, FileText, LayoutDashboard, LogOut, Map, Menu, MessageSquareQuote, Moon, Settings, Sun, Users, X } from 'lucide-react'
 import Seo from '../components/ui/Seo'
 import { Logo } from '../components/layout/Navbar'
 import { useAdmin } from '../context/AdminContext'
@@ -14,26 +14,36 @@ import AdminLeads from './AdminLeads'
 import AdminBlogs from './AdminBlogs'
 import AdminReviews from './AdminReviews'
 import AdminSettings from './AdminSettings'
+import AdminPopup from './AdminPopup'
+import useServerLeads from './useServerLeads'
+import { adminApi } from '../lib/api'
 
 const NAV = [
   { to: 'dashboard', label: 'Dashboard', Icon: LayoutDashboard, el: <AdminDashboard /> },
   { to: 'trips', label: 'Trips', Icon: Map, el: <AdminTrips /> },
   { to: 'departures', label: 'Departures', Icon: CalendarDays, el: <AdminDepartures /> },
   { to: 'leads', label: 'Leads', Icon: Users, el: <AdminLeads /> },
+  { to: 'popup', label: 'Popup', Icon: BellRing, el: <AdminPopup /> },
   { to: 'blogs', label: 'Blogs', Icon: FileText, el: <AdminBlogs /> },
   { to: 'reviews', label: 'Reviews', Icon: MessageSquareQuote, el: <AdminReviews /> },
   { to: 'settings', label: 'Settings', Icon: Settings, el: <AdminSettings /> },
 ]
 
 export default function AdminLayout() {
-  const { isAuthed, logout } = useAdmin()
+  const { checked, isAuthed, logout, refresh, csrf } = useAdmin()
   const { dark, toggle } = useTheme()
-  const { leads } = useData()
+  const { content, rev, source } = useData()
   const { pathname } = useLocation()
   const [open, setOpen] = useState(false)
+  const save = usePublisher(content, rev, csrf, refresh)
+  const { leads } = useServerLeads()
 
   useEffect(() => setOpen(false), [pathname])
+  useEffect(() => { if (!checked) refresh() }, [checked, refresh])
 
+  if (!checked || (isAuthed && source === 'loading')) {
+    return <div className="flex h-screen items-center justify-center bg-slate-50 dark:bg-slate-950"><Loader2 className="animate-spin text-sky-brand" size={32} aria-label="Loading" /></div>
+  }
   if (!isAuthed) return <Navigate to="/admin/login" replace />
 
   const current = NAV.find((n) => pathname.startsWith(`/admin/${n.to}`)) || NAV[0]
@@ -85,6 +95,7 @@ export default function AdminLayout() {
             <h1 className="text-lg font-bold text-deep dark:text-white">{current.label}</h1>
           </div>
           <div className="flex items-center gap-2">
+            <SaveStatus save={save} />
             <button type="button" onClick={toggle} aria-label={dark ? 'Switch to light mode' : 'Switch to dark mode'} className="rounded-lg p-2 text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800">{dark ? <Sun size={18} /> : <Moon size={18} />}</button>
             <button type="button" onClick={logout} className="inline-flex items-center gap-2 rounded-pill border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-600 hover:border-red-300 hover:text-red-600 dark:border-slate-700 dark:text-slate-300">
               <LogOut size={16} /> <span className="hidden sm:inline">Logout</span>
@@ -92,6 +103,11 @@ export default function AdminLayout() {
           </div>
         </header>
         <main id="main" className="flex-1 overflow-y-auto p-4 md:p-6">
+          {source === 'offline' && (
+            <p role="alert" className="mb-4 flex items-start gap-2 rounded-xl bg-red-50 p-3 text-sm font-medium text-red-700 dark:bg-red-500/10 dark:text-red-300">
+              <AlertTriangle size={18} className="shrink-0" /> Couldn’t load the live content from the server, so editing is paused to avoid overwriting it. Refresh the page to try again.
+            </p>
+          )}
           <motion.div key={pathname} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.25 }}>
             <Routes>
               <Route index element={<Navigate to="dashboard" replace />} />
@@ -103,4 +119,57 @@ export default function AdminLayout() {
       </div>
     </div>
   )
+}
+
+// Publishes the whole site content to the server ~1s after the last admin edit.
+function usePublisher(content, rev, csrf, refresh) {
+  const [state, setState] = useState({ status: 'idle', error: null, at: null })
+  const latest = useRef(content)
+  latest.current = content
+  const { source } = useData()
+
+  useEffect(() => {
+    if (!rev || source === 'offline' || source === 'loading') return
+    setState((s) => ({ ...s, status: 'pending' }))
+    const t = setTimeout(async () => {
+      setState((s) => ({ ...s, status: 'saving' }))
+      const r = await adminApi.save(latest.current, csrf)
+      if (r.ok) setState({ status: 'saved', error: null, at: new Date() })
+      else {
+        setState({ status: 'error', error: r.error || 'Could not save', at: null })
+        if (r.status === 401 || r.status === 403) refresh()
+      }
+    }, 900)
+    return () => clearTimeout(t)
+  }, [rev, csrf, refresh, source])
+
+  // Warn before closing the tab with unpublished changes.
+  useEffect(() => {
+    if (state.status !== 'pending' && state.status !== 'saving') return
+    const warn = (e) => { e.preventDefault(); e.returnValue = '' }
+    window.addEventListener('beforeunload', warn)
+    return () => window.removeEventListener('beforeunload', warn)
+  }, [state.status])
+
+  const retry = async () => {
+    setState((s) => ({ ...s, status: 'saving' }))
+    const r = await adminApi.save(latest.current, csrf)
+    setState(r.ok ? { status: 'saved', error: null, at: new Date() } : { status: 'error', error: r.error || 'Could not save', at: null })
+  }
+  return { ...state, retry }
+}
+
+function SaveStatus({ save }) {
+  const base = 'inline-flex items-center gap-1.5 rounded-pill px-3 py-1.5 text-xs font-semibold'
+  if (save.status === 'pending' || save.status === 'saving')
+    return <span role="status" className={`${base} bg-sky-light text-sky-dark`}><Loader2 size={14} className="animate-spin" /><span className="hidden sm:inline">Publishing…</span></span>
+  if (save.status === 'saved')
+    return <span role="status" className={`${base} bg-green-100 text-green-700`}><CheckCircle2 size={14} /><span className="hidden sm:inline">Live on website</span></span>
+  if (save.status === 'error')
+    return (
+      <button type="button" onClick={save.retry} title={save.error} className="inline-flex items-center gap-1.5 rounded-pill bg-red-100 px-3 py-1.5 text-xs font-bold text-red-700">
+        <AlertTriangle size={14} /> Not saved — retry
+      </button>
+    )
+  return <span className={`${base} hidden text-slate-400 md:inline-flex`}><CloudUpload size={14} /> Changes publish automatically</span>
 }
