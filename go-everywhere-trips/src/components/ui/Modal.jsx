@@ -7,6 +7,11 @@ const FOCUSABLE = 'a[href], button:not([disabled]), input:not([disabled]), selec
 // Accessible dialog: focus trap, Esc to close, restores focus on close, locks body scroll.
 export function useFocusTrap(open, onClose) {
   const ref = useRef(null)
+  // Read the latest onClose through a ref so the effect below runs only when the dialog
+  // opens/closes. Callers often pass a new function every render; re-running the effect on
+  // each keystroke moved focus out of the field being typed in (closing mobile keyboards).
+  const onCloseRef = useRef(onClose)
+  onCloseRef.current = onClose
   useEffect(() => {
     if (!open) return
     const prev = document.activeElement
@@ -17,7 +22,7 @@ export function useFocusTrap(open, onClose) {
     document.body.style.overflow = 'hidden'
 
     const onKey = (e) => {
-      if (e.key === 'Escape') onClose?.()
+      if (e.key === 'Escape') onCloseRef.current?.()
       if (e.key !== 'Tab' || !node) return
       const items = [...node.querySelectorAll(FOCUSABLE)]
       if (!items.length) return
@@ -31,7 +36,7 @@ export function useFocusTrap(open, onClose) {
       document.body.style.overflow = prevOverflow
       prev?.focus?.()
     }
-  }, [open, onClose])
+  }, [open])
   return ref
 }
 
