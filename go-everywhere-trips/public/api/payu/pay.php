@@ -20,7 +20,11 @@ if (strlen($phone) === 12 && str_starts_with($phone, '91')) $phone = substr($pho
 
 $trip = $catalog[$slug] ?? null;
 if (!$trip) fail_page('That trip could not be found. Please refresh the page and try again.');
-if (!in_array($date, $trip['departures'], true) || $date < date('Y-m-d')) fail_page('Please pick one of the available departure dates.');
+// Any real calendar date from tomorrow up to 18 months ahead: a group departure or the traveller's own start date.
+$d = DateTime::createFromFormat('!Y-m-d', $date);
+if (!$d || $d->format('Y-m-d') !== $date) fail_page('Please pick a start date on the calendar.');
+if ($date <= date('Y-m-d') || $date > date('Y-m-d', strtotime('+18 months'))) fail_page('Please pick a start date between tomorrow and the next 18 months.');
+$isDeparture = in_array($date, $trip['departures'], true);
 if ($people < 1 || $people > 20) fail_page('Number of travellers must be between 1 and 20.');
 if (mb_strlen($name) < 2) fail_page('Please enter your full name.');
 if (!filter_var($email, FILTER_VALIDATE_EMAIL)) fail_page('Please enter a valid email address.');
@@ -44,14 +48,15 @@ $params = [
     'udf2'        => $date,
     'udf3'        => (string) $people,
     'udf4'        => $plan,
-    'udf5'        => '',
+    'udf5'        => $isDeparture ? 'group' : 'own-date',
     'surl'        => $base . '/api/payu/response.php',
     'furl'        => $base . '/api/payu/response.php',
 ];
 $params['hash'] = payu_request_hash($params, $cfg['salt']);
 
 payu_log(['time' => date('c'), 'event' => 'initiated', 'txnid' => $txnid, 'amount' => $amount, 'trip' => $slug,
-          'date' => $date, 'people' => $people, 'plan' => $plan, 'name' => $name, 'email' => $email, 'phone' => $phone]);
+          'date' => $date, 'people' => $people, 'plan' => $plan, 'name' => $name, 'email' => $email, 'phone' => $phone,
+          'note' => $isDeparture ? 'group departure' : 'own start date']);
 
 $action = PAYU_URLS[$cfg['mode'] === 'live' ? 'live' : 'test'];
 $fields = '';

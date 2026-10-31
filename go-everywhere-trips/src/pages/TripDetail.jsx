@@ -16,6 +16,7 @@ import { Reveal } from '../components/ui/Reveal'
 import { useFocusTrap } from '../components/ui/Modal'
 import ReviewCard from '../components/ui/ReviewCard'
 import CheckoutModal from '../components/booking/CheckoutModal'
+import DateCalendar from '../components/booking/DateCalendar'
 import { WhatsAppIcon } from '../components/ui/BrandIcons'
 import { useData } from '../context/DataContext'
 import { CANCELLATION_POLICY } from '../data/trips'
@@ -438,11 +439,13 @@ function BookingCard({ id, trip, dates, date, setDate, people, setPeople }) {
   const [checkout, setCheckout] = useState(false)
   const selected = dates.find((d) => d.date === date)
   const maxPeople = selected?.seats || 20
+  // Keep the traveller count within the seats left when a group departure is picked.
+  useEffect(() => { if (people > maxPeople) setPeople(maxPeople) }, [people, maxPeople, setPeople])
   const total = trip.price * people
   const url = `${SITE_URL}/trips/${trip.slug}` // always share the live URL
 
   const book = () => {
-    if (!date) { setError('Please pick a departure date'); return }
+    if (!date) { setError('Please pick a start date on the calendar'); return }
     setError('')
     setCheckout(true)
   }
@@ -460,12 +463,15 @@ function BookingCard({ id, trip, dates, date, setDate, people, setPeople }) {
       </div>
 
       <div>
-        <label htmlFor={`date-${id}`} className="label">Departure date</label>
-        <select id={`date-${id}`} value={date} onChange={(e) => { setDate(e.target.value); setError('') }} className="input py-2.5" aria-invalid={!!error} aria-describedby={error ? `err-${id}` : undefined}>
-          <option value="">Select Departure Date</option>
-          {dates.map((d) => <option key={d.date} value={d.date} disabled={d.seats === 0}>{fmtDate(d.date)} — {d.seats} seats left</option>)}
-        </select>
-        {error && <p id={`err-${id}`} className="mt-1 text-xs font-semibold text-red-500">{error}</p>}
+        <p id={`date-label-${id}`} className="label">Choose your start date</p>
+        <DateCalendar id={`date-${id}`} value={date} onChange={(d) => { setDate(d); setError('') }} departures={dates} />
+        {date ? (
+          <p className="mt-2 rounded-lg bg-sky-xlight px-3 py-2 text-sm dark:bg-slate-900" aria-live="polite">
+            <span className="font-bold text-deep dark:text-white">Selected: {fmtDate(date, { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' })}</span>
+            <span className="block text-xs text-slate-500">{selected ? `Group departure · ${selected.seats} seats left` : 'Your own start date — we’ll confirm availability on WhatsApp'}</span>
+          </p>
+        ) : null}
+        {error && <p id={`err-${id}`} role="alert" className="mt-1 text-xs font-semibold text-red-500">{error}</p>}
       </div>
 
       <div>

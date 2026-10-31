@@ -103,13 +103,14 @@ export default function PageLoader() {
             </div>
 
             {/* Logo + wordmark */}
+            {/* relative + z-10: keeps the logo above the (transformed, so stacked) mountain scene */}
             <motion.img
-              src="/brand/logo-circle-128.webp" alt="" width="64" height="64"
-              className="-mt-2 h-16 w-16 rounded-full shadow-xl ring-4 ring-sun"
+              src="/brand/logo-circle-256.webp" alt="" width="80" height="80"
+              className="relative z-10 mt-5 h-20 w-20 rounded-full ring-4 ring-sun shadow-[0_0_0_8px_rgba(2,68,128,0.85),0_0_40px_rgba(254,214,3,0.45),0_12px_30px_rgba(0,0,0,0.4)]"
               initial={{ scale: 0, rotate: -120 }} animate={{ scale: 1, rotate: 0 }}
               transition={{ type: 'spring', stiffness: 260, damping: 16, delay: 0.9 }}
             />
-            <div className="mt-3 flex" aria-hidden="true">
+            <div className="relative z-10 mt-4 flex" aria-hidden="true">
               {WORD.split('').map((ch, i) => (
                 <motion.span key={i} className="text-2xl font-black tracking-tight text-white sm:text-3xl"
                   initial={{ opacity: 0, y: 18 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 1.05 + i * 0.035, type: 'spring', stiffness: 400, damping: 20 }}>

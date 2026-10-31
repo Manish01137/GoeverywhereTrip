@@ -1,6 +1,6 @@
 {
-  "version": 1793037566,
-  "savedAt": "2026-10-26T23:29:26+05:30",
+  "version": 1793293075,
+  "savedAt": "2026-10-29T22:27:55+05:30",
   "trips": [
     {
       "id": 1,
@@ -17,7 +17,7 @@
       "duration": "5 Days 4 Nights",
       "durationDays": 5,
       "groupType": "Group",
-      "price": 20,
+      "price": 6500,
       "rating": 4.9,
       "reviews": 42,
       "seats": 3,
@@ -150,7 +150,8 @@
         "Government photo ID (mandatory for permits)",
         "Power bank — charging points are limited in the hills"
       ],
-      "faqs": []
+      "faqs": [],
+      "originalPrice": 7500
     },
     {
       "id": 2,
@@ -1231,7 +1232,7 @@
     "heroSubtitle": "Where the Himalaya meets great company",
     "whatsapp": "919410776387",
     "phoneDisplay": "+91 94107 76387",
-    "email": "hello@goeverywheretrips.com",
+    "email": "info@goeverywheretrips.com",
     "instagram": "https://instagram.com/goeverywheretrips",
     "youtube": "https://youtube.com/@goeverywheretrips",
     "address": "Rajpur Road, Dehradun, Uttarakhand 248001"

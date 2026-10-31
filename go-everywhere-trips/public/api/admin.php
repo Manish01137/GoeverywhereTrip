@@ -144,6 +144,7 @@ switch ($action) {
             $merged = array_merge($cur, array_filter($p, fn($v) => $v !== ''));
             if ($rank[$ev] < $rank[$cur['event']]) { $merged['event'] = $cur['event']; $merged['status'] = $cur['status']; }
             $merged['started'] = $cur['started'] ?? $cur['time'];
+            if (($cur['event'] ?? '') === 'initiated' && !empty($cur['note'])) $merged['note'] = $cur['note']; // keep 'group departure' / 'own start date'
             $byTxn[$id] = $merged;
         }
         $payments = array_values(array_reverse($byTxn));

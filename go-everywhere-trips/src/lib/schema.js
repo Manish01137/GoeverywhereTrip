@@ -34,6 +34,7 @@ export const website = () => ({
   '@type': 'WebSite',
   '@id': abs('/#website'),
   name: SITE_NAME,
+  alternateName: ['Go Everywhere', 'goeverywheretrips'],
   url: abs('/'),
   publisher: { '@id': abs('/#organization') },
   potentialAction: {

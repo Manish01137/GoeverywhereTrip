@@ -87,7 +87,7 @@ export default function AdminLeads() {
                   <span className="font-semibold">{p.name}</span>
                   <span className="block text-xs text-slate-500">{p.phone}{p.email && ` · ${p.email}`}</span>
                 </Td>
-                <Td>{tripName(p.trip)}<span className="block text-xs text-slate-500">{/^\d{4}-\d{2}-\d{2}$/.test(p.date) ? fmtDate(p.date) : p.date} · {p.people} pax · {p.plan === 'full' ? 'full payment' : 'advance'}</span></Td>
+                <Td>{tripName(p.trip)}<span className="block text-xs text-slate-500">{/^\d{4}-\d{2}-\d{2}$/.test(p.date) ? fmtDate(p.date) : p.date} · {p.people} pax{p.note === 'own start date' && <strong className="text-amber-600"> · own start date</strong>} · {p.plan === 'full' ? 'full payment' : 'advance'}</span></Td>
                 <Td className="font-bold">{inr(p.amount)}</Td>
                 <Td>
                   <span className="flex items-center gap-2">
