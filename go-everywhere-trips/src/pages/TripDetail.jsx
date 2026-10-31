@@ -17,6 +17,8 @@ import { useFocusTrap } from '../components/ui/Modal'
 import ReviewCard from '../components/ui/ReviewCard'
 import CheckoutModal from '../components/booking/CheckoutModal'
 import DateCalendar from '../components/booking/DateCalendar'
+import ShareTrip from '../components/booking/ShareTrip'
+import { defaultSharing, fromPrice, sharingPrices } from '../lib/sharing'
 import { WhatsAppIcon } from '../components/ui/BrandIcons'
 import { useData } from '../context/DataContext'
 import { CANCELLATION_POLICY } from '../data/trips'
@@ -52,6 +54,7 @@ export default function TripDetail() {
   const dates = useMemo(() => upcoming(trip?.departures), [trip])
   const [date, setDate] = useState(() => params.get('date') || '')
   const [people, setPeople] = useState(2)
+  const [sharing, setSharing] = useState(() => (trip ? defaultSharing(trip) : 'quad'))
   const [lightbox, setLightbox] = useState(null)
 
   useEffect(() => {
@@ -78,7 +81,7 @@ export default function TripDetail() {
   const pickDate = (d) => { setDate(d); scrollToBook() }
   const enquiry = `Hi, I'm interested in ${trip.name}`
 
-  const booking = { trip, dates, date, setDate, people, setPeople }
+  const booking = { trip, dates, date, setDate, people, setPeople, sharing, setSharing }
 
   return (
     <>
@@ -136,7 +139,10 @@ export default function TripDetail() {
                 {trip.badge && <Badge tone="white" className="ring-1 ring-slate-200">{trip.badge}</Badge>}
                 {dates[0]?.seats <= 5 && <Badge tone="accent" className="animate-pulse">Only {dates[0].seats} seats left!</Badge>}
               </div>
-              <h1 className="mt-3 text-3xl font-black leading-tight text-deep md:text-4xl dark:text-white">{trip.name}</h1>
+              <div className="mt-3 flex items-start justify-between gap-3">
+                <h1 className="text-3xl font-black leading-tight text-deep md:text-4xl dark:text-white">{trip.name}</h1>
+                <ShareTrip trip={trip} />
+              </div>
               <div className="mt-3 flex flex-wrap gap-x-5 gap-y-2 text-sm text-slate-600 dark:text-slate-300">
                 <span className="inline-flex items-center gap-1.5"><Clock size={16} className="text-sky-brand" />{trip.duration}</span>
                 <span className="inline-flex items-center gap-1.5"><MapPin size={16} className="text-sky-brand" />Starts {trip.startingPoint}</span>
@@ -197,7 +203,7 @@ export default function TripDetail() {
                       <div className="min-w-0">
                         <p className="font-semibold text-slate-900 dark:text-white">{fmtDate(d.date, { weekday: 'short', day: 'numeric', month: 'short' })} → {fmtDate(addDays(d.date, trip.durationDays - 1), { day: 'numeric', month: 'short' })}</p>
                         <p className="mt-1.5 flex flex-wrap items-center gap-2 text-sm">
-                          <span className="font-bold text-sky-brand">{inr(trip.price)}</span>
+                          <span className="font-bold text-sky-brand">{inr(fromPrice(trip))}</span>
                           <span className={`whitespace-nowrap rounded-pill px-2 py-0.5 text-xs font-bold ${seatTone(d.seats)}`}>{d.seats === 0 ? 'Sold out' : `${d.seats} left`}</span>
                         </p>
                       </div>
@@ -219,7 +225,7 @@ export default function TripDetail() {
                           <td className="px-4 py-3 font-semibold">{fmtDate(d.date, { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' })}</td>
                           <td className="px-4 py-3 text-slate-500">{fmtDate(addDays(d.date, trip.durationDays - 1))}</td>
                           <td className="px-4 py-3"><span className={`whitespace-nowrap rounded-pill px-2.5 py-1 text-xs font-bold ${seatTone(d.seats)}`}>{d.seats} left</span></td>
-                          <td className="px-4 py-3 font-bold text-sky-brand">{inr(trip.price)}</td>
+                          <td className="px-4 py-3 font-bold text-sky-brand">from {inr(fromPrice(trip))}</td>
                           <td className="px-4 py-3 text-right">
                             <button type="button" onClick={() => pickDate(d.date)} disabled={d.seats === 0} className="rounded-pill bg-sky-brand px-4 py-1.5 text-xs font-bold text-white hover:bg-sky-dark disabled:bg-slate-300">
                               {d.seats === 0 ? 'Sold out' : 'Book'}
@@ -432,7 +438,7 @@ function RatingSummary({ rating, count }) {
   )
 }
 
-function BookingCard({ id, trip, dates, date, setDate, people, setPeople }) {
+function BookingCard({ id, trip, dates, date, setDate, people, setPeople, sharing, setSharing }) {
   const { waLink, trackWhatsApp } = useData()
   const [copied, setCopied] = useState(false)
   const [error, setError] = useState('')
@@ -441,7 +447,10 @@ function BookingCard({ id, trip, dates, date, setDate, people, setPeople }) {
   const maxPeople = selected?.seats || 20
   // Keep the traveller count within the seats left when a group departure is picked.
   useEffect(() => { if (people > maxPeople) setPeople(maxPeople) }, [people, maxPeople, setPeople])
-  const total = trip.price * people
+  const options = sharingPrices(trip)
+  const chosen = options.find((o) => o.id === sharing && o.price) || options.find((o) => o.price)
+  const unit = chosen?.price || trip.price
+  const total = unit * people
   const url = `${SITE_URL}/trips/${trip.slug}` // always share the live URL
 
   const book = () => {
@@ -459,7 +468,7 @@ function BookingCard({ id, trip, dates, date, setDate, people, setPeople }) {
     <div data-book id={`book-${id}`} className="space-y-4 rounded-2xl bg-white p-6 shadow-hover dark:bg-slate-800 dark:ring-1 dark:ring-slate-700">
       <div>
         <p className="text-xs font-semibold uppercase tracking-wider text-slate-400">Starting from</p>
-        <div className="text-3xl font-black text-sky-brand">{inr(trip.price)} <span className="text-base font-normal text-slate-400">/person</span></div>
+        <div className="text-3xl font-black text-sky-brand">{inr(fromPrice(trip))} <span className="text-base font-normal text-slate-400">/person</span></div>
       </div>
 
       <div>
@@ -474,6 +483,33 @@ function BookingCard({ id, trip, dates, date, setDate, people, setPeople }) {
         {error && <p id={`err-${id}`} role="alert" className="mt-1 text-xs font-semibold text-red-500">{error}</p>}
       </div>
 
+      <fieldset>
+        <legend className="label">Room sharing</legend>
+        <div className="grid grid-cols-2 gap-2">
+          {options.map((o) => {
+            const on = chosen?.id === o.id
+            if (!o.price) {
+              return (
+                <a key={o.id} href={waLink(`Hi! I'd like ${o.label.toLowerCase()} for ${trip.name}${date ? ` on ${fmtDate(date)}` : ''}. What's the price?`)} target="_blank" rel="noopener noreferrer"
+                  className="rounded-xl border border-dashed border-slate-300 p-2.5 text-left transition-colors hover:border-green-500 dark:border-slate-600">
+                  <span className="block text-sm font-semibold text-slate-700 dark:text-slate-200">{o.short}</span>
+                  <span className="block text-[11px] text-slate-400">{o.note}</span>
+                  <span className="mt-1 flex items-center gap-1 text-xs font-bold text-green-600"><WhatsAppIcon size={11} /> On request</span>
+                </a>
+              )
+            }
+            return (
+              <button key={o.id} type="button" aria-pressed={on} onClick={() => setSharing(o.id)}
+                className={`rounded-xl border-2 p-2.5 text-left transition-colors ${on ? 'border-sky-brand bg-sky-xlight dark:bg-sky-500/10' : 'border-slate-200 hover:border-sky-brand dark:border-slate-600'}`}>
+                <span className="block text-sm font-semibold text-slate-800 dark:text-white">{o.short}</span>
+                <span className="block text-[11px] text-slate-400">{o.note}</span>
+                <span className="mt-1 block text-sm font-black text-sky-brand">{inr(o.price)}<span className="text-[10px] font-normal text-slate-400">/person</span></span>
+              </button>
+            )
+          })}
+        </div>
+      </fieldset>
+
       <div>
         <span id={`ppl-${id}`} className="label">No. of people</span>
         <div className="flex items-center justify-between rounded-xl border border-slate-200 p-1.5 dark:border-slate-700" role="group" aria-labelledby={`ppl-${id}`}>
@@ -484,7 +520,7 @@ function BookingCard({ id, trip, dates, date, setDate, people, setPeople }) {
       </div>
 
       <div className="flex items-center justify-between rounded-xl bg-sky-xlight px-4 py-3 text-sm dark:bg-slate-900">
-        <span className="text-slate-500">{inr(trip.price)} × {people}</span>
+        <span className="text-slate-500">{inr(unit)} × {people} · {chosen?.short}</span>
         <span className="text-lg font-black text-deep dark:text-white">{inr(total)}</span>
       </div>
 
@@ -510,7 +546,7 @@ function BookingCard({ id, trip, dates, date, setDate, people, setPeople }) {
         )}
         {copied && <span role="status" className="text-xs font-semibold text-green-600">Link copied!</span>}
       </div>
-      {date && <CheckoutModal open={checkout} onClose={() => setCheckout(false)} trip={trip} date={date} people={people} />}
+      {date && chosen && <CheckoutModal open={checkout} onClose={() => setCheckout(false)} trip={trip} date={date} people={people} sharing={chosen} />}
     </div>
   )
 }

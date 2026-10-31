@@ -8,6 +8,7 @@ import { useData } from '../context/DataContext'
 import { TRIP_TYPES, withDefaults } from '../data/trips'
 import { IMAGES, driveId, img, isDriveFolder } from '../data/images'
 import { inr, slugify } from '../lib/format'
+import { SHARING, sharingPrices } from '../lib/sharing'
 import { EmptyRow, IconBtn, Panel, StatusBadge, Table, Td } from './ui'
 
 const SECTIONS = ['Basics', 'Photos & PDF', 'Itinerary', 'Inclusions & stay', 'FAQs', 'Dates']
@@ -16,7 +17,7 @@ const join = (a) => (a || []).join('\n')
 
 const BLANK = {
   name: '', slug: '', type: 'Trek', destination: '', places: '', duration: '', durationDays: 3, groupType: 'Group',
-  startingPoint: 'Dehradun', price: '', originalPrice: '', seats: 20, badge: '', status: 'Draft', rating: 5, reviews: 0,
+  startingPoint: 'Dehradun', price: '', originalPrice: '', sharing: { quad: '', triple: '', double: '', single: '' }, seats: 20, badge: '', status: 'Draft', rating: 5, reviews: 0,
   description: '', highlights: '',
   image: '', gallery: '', brochure: '', video: '',
   itinerary: [{ title: '', desc: '', activities: '' }],
@@ -42,6 +43,8 @@ function toForm(raw) {
     faqs: (raw.faqs || []).map((f) => ({ ...f })),
     departures: (raw.departures || []).map((d) => ({ ...d })),
     originalPrice: raw.originalPrice ?? '',
+    // Current per-person prices (empty = on request), starting from the same defaults the website uses.
+    sharing: Object.fromEntries(sharingPrices(raw).map((o) => [o.id, o.price ?? ''])),
     badge: raw.badge || '', brochure: raw.brochure || '', video: raw.video || '',
     transport: raw.transport || '', weather: raw.weather || '', pickup: raw.pickup || '',
   }
@@ -92,7 +95,8 @@ export default function AdminTrips() {
     if (!form.name.trim()) er.name = 'Required'
     if (!form.destination.trim()) er.destination = 'Required'
     if (!form.duration.trim()) er.duration = 'Required'
-    if (!(Number(form.price) > 0)) er.price = 'Enter a price'
+    const sharingSet = Object.values(form.sharing || {}).map(Number).filter((n) => n > 0)
+    if (!(Number(form.price) > 0) && !sharingSet.length) er.price = 'Enter a price (or room sharing prices below)'
     if (!form.image.trim()) er.image = 'Add a cover photo link'
     const imgErr = linkProblem(form.image); if (imgErr) er.image = imgErr
     const galErr = lines(form.gallery).map(linkProblem).find(Boolean); if (galErr) er.gallery = galErr
@@ -116,7 +120,10 @@ export default function AdminTrips() {
       name: form.name.trim(), slug, type: form.type, destination: form.destination.trim(),
       places: form.places.split(',').map((p) => p.trim()).filter(Boolean),
       duration: form.duration.trim(), durationDays: Math.max(1, Number(form.durationDays) || 1), groupType: form.groupType,
-      startingPoint: form.startingPoint.trim(), price: Number(form.price),
+      startingPoint: form.startingPoint.trim(),
+      // "Starting from" price on cards = cheapest room-sharing price when set.
+      price: sharingSet.length ? Math.min(...sharingSet) : Number(form.price),
+      sharing: Object.fromEntries(SHARING.map((o) => [o.id, Number(form.sharing?.[o.id]) > 0 ? Number(form.sharing[o.id]) : null])),
       originalPrice: Number(form.originalPrice) > Number(form.price) ? Number(form.originalPrice) : undefined,
       seats: Number(form.seats) || 0, badge: form.badge.trim() || undefined, status: form.status,
       rating: Math.min(5, Math.max(0, Number(form.rating) || 0)), reviews: Math.max(0, Number(form.reviews) || 0),
@@ -243,6 +250,18 @@ export default function AdminTrips() {
               <Field id="t-start" label="Starting point"><input id="t-start" value={form.startingPoint} onChange={set('startingPoint')} className="input" /></Field>
               <Field id="t-badge" label="Badge on card (optional)"><input id="t-badge" value={form.badge} onChange={set('badge')} className="input" placeholder="Bestseller / New / Winter Special" /></Field>
               <Field id="t-price" label="Price per person (₹) *" error={errors.price}><input id="t-price" type="number" min={0} value={form.price} onChange={set('price')} className="input" /></Field>
+              <div className="sm:col-span-2 rounded-xl border border-slate-200 p-4 dark:border-slate-700">
+                <p className="label">Room sharing prices (₹ per person)</p>
+                <p className="-mt-1 mb-3 text-xs text-slate-500">Customers choose one when booking. Leave a box empty to show it as “On request” (they’ll WhatsApp you). The lowest price becomes the “Starting from” price.</p>
+                <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+                  {SHARING.map((o) => (
+                    <Field key={o.id} id={`t-sh-${o.id}`} label={o.short}>
+                      <input id={`t-sh-${o.id}`} type="number" min={0} inputMode="numeric" placeholder="On request" value={form.sharing?.[o.id] ?? ''}
+                        onChange={(e) => setForm((f) => ({ ...f, sharing: { ...f.sharing, [o.id]: e.target.value } }))} className="input" />
+                    </Field>
+                  ))}
+                </div>
+              </div>
               <Field id="t-mrp" label="Original price (₹, optional — shows a discount)"><input id="t-mrp" type="number" min={0} value={form.originalPrice} onChange={set('originalPrice')} className="input" /></Field>
               <Field id="t-rating" label="Rating (0–5)"><input id="t-rating" type="number" min={0} max={5} step={0.1} value={form.rating} onChange={set('rating')} className="input" /></Field>
               <Field id="t-reviews" label="Number of reviews"><input id="t-reviews" type="number" min={0} value={form.reviews} onChange={set('reviews')} className="input" /></Field>

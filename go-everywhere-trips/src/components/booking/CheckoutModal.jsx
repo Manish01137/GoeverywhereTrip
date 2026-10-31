@@ -9,12 +9,12 @@ import { isEmail, isPhone } from '../../lib/validate'
 
 // Collects traveller details, then POSTs to the PHP endpoint which prices the trip,
 // signs the request and forwards the customer to PayU's hosted checkout.
-export default function CheckoutModal({ open, onClose, trip, date, people }) {
+export default function CheckoutModal({ open, onClose, trip, date, people, sharing }) {
   const [form, setForm] = useState({ name: '', email: '', phone: '', plan: 'advance', agree: false })
   const [errors, setErrors] = useState({})
   const [sending, setSending] = useState(false)
 
-  const total = trip.price * people
+  const total = sharing.price * people // same per-person price pay.php charges for this sharing option
   const advance = Math.round((total * ADVANCE_PERCENT) / 100) // whole rupees, same rounding as pay.php
   const payNow = form.plan === 'full' ? total : advance
   const set = (k, v) => { setForm((f) => ({ ...f, [k]: v })); setErrors((e) => ({ ...e, [k]: undefined })) }
@@ -34,7 +34,7 @@ export default function CheckoutModal({ open, onClose, trip, date, people }) {
     const f = document.createElement('form')
     f.method = 'POST'
     f.action = '/api/payu/pay.php'
-    const fields = { trip: trip.slug, date, people, plan: form.plan, name: form.name, email: form.email, phone: form.phone }
+    const fields = { trip: trip.slug, date, people, sharing: sharing.id, plan: form.plan, name: form.name, email: form.email, phone: form.phone }
     Object.entries(fields).forEach(([name, value]) => f.appendChild(Object.assign(document.createElement('input'), { type: 'hidden', name, value })))
     document.body.appendChild(f)
     f.submit()
@@ -64,7 +64,7 @@ export default function CheckoutModal({ open, onClose, trip, date, people }) {
       <form id="checkout-form" onSubmit={submit} noValidate className="space-y-4">
         <div className="rounded-xl bg-sky-xlight p-4 text-sm dark:bg-slate-800">
           <p className="font-bold text-deep dark:text-white">{trip.name}</p>
-          <p className="mt-1 text-slate-600 dark:text-slate-300">{fmtDate(date, { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' })} · {people} {people === 1 ? 'traveller' : 'travellers'} · {inr(total)} total</p>
+          <p className="mt-1 text-slate-600 dark:text-slate-300">{fmtDate(date, { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' })} · {people} {people === 1 ? 'traveller' : 'travellers'} · {sharing.label} ({inr(sharing.price)}/person) · {inr(total)} total</p>
         </div>
 
         <fieldset className="space-y-2">

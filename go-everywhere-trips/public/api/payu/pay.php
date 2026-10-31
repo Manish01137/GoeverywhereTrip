@@ -30,7 +30,13 @@ if (mb_strlen($name) < 2) fail_page('Please enter your full name.');
 if (!filter_var($email, FILTER_VALIDATE_EMAIL)) fail_page('Please enter a valid email address.');
 if (!preg_match('/^[6-9]\d{9}$/', $phone)) fail_page('Please enter a valid 10-digit Indian mobile number.');
 
-$total  = $trip['price'] * $people;
+// Room sharing: price per person comes from the server catalog, never from the browser.
+$sharingNames = ['quad' => 'Quad sharing', 'triple' => 'Triple sharing', 'double' => 'Double sharing', 'single' => 'Single room'];
+$sharing = (string) ($_POST['sharing'] ?? '');
+$prices = $trip['sharing'] ?? ['quad' => $trip['price'], 'triple' => $trip['price'], 'double' => null, 'single' => null];
+if (!isset($sharingNames[$sharing])) fail_page('Please choose a room sharing option.');
+if (empty($prices[$sharing])) fail_page($sharingNames[$sharing] . ' is available on request — please message us on WhatsApp.');
+$total  = $prices[$sharing] * $people;
 $amount = $plan === 'full' ? $total : round($total * ((int) $cfg['advance_percent']) / 100); // whole rupees, same as the website
 $amount = number_format($amount, 2, '.', '');
 
@@ -47,7 +53,7 @@ $params = [
     'udf1'        => $slug,
     'udf2'        => $date,
     'udf3'        => (string) $people,
-    'udf4'        => $plan,
+    'udf4'        => $plan . '-' . $sharing, // e.g. "advance-double"
     'udf5'        => $isDeparture ? 'group' : 'own-date',
     'surl'        => $base . '/api/payu/response.php',
     'furl'        => $base . '/api/payu/response.php',
@@ -55,7 +61,7 @@ $params = [
 $params['hash'] = payu_request_hash($params, $cfg['salt']);
 
 payu_log(['time' => date('c'), 'event' => 'initiated', 'txnid' => $txnid, 'amount' => $amount, 'trip' => $slug,
-          'date' => $date, 'people' => $people, 'plan' => $plan, 'name' => $name, 'email' => $email, 'phone' => $phone,
+          'date' => $date, 'people' => $people, 'plan' => $plan . '-' . $sharing, 'name' => $name, 'email' => $email, 'phone' => $phone,
           'note' => $isDeparture ? 'group departure' : 'own start date']);
 
 $action = PAYU_URLS[$cfg['mode'] === 'live' ? 'live' : 'test'];

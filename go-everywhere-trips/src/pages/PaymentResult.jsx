@@ -28,7 +28,8 @@ export default function PaymentResult({ status }) {
               {trip && <Row k="Trip" v={trip.name} />}
               {date && <Row k="Departure" v={fmtDate(date, { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' })} />}
               {q.get('people') && <Row k="Travellers" v={q.get('people')} />}
-              <Row k="Paid" v={`${inr(amount)}${q.get('plan') === 'advance' ? ' (advance)' : ''}`} />
+              {SHARE_LABEL[(q.get('plan') || '').split('-')[1]] && <Row k="Room" v={SHARE_LABEL[(q.get('plan') || '').split('-')[1]]} />}
+              <Row k="Paid" v={`${inr(amount)}${(q.get('plan') || '').startsWith('advance') ? ' (advance)' : ''}`} />
               <Row k="Transaction ID" v={txnid} />
             </dl>
             <div className="flex flex-wrap justify-center gap-3">
@@ -63,6 +64,8 @@ export default function PaymentResult({ status }) {
     </div>
   )
 }
+
+const SHARE_LABEL = { quad: 'Quad sharing', triple: 'Triple sharing', double: 'Double sharing', single: 'Single room' }
 
 const Row = ({ k, v }) => (
   <div className="flex justify-between gap-4"><dt className="text-slate-500">{k}</dt><dd className="text-right font-semibold text-slate-900 dark:text-white">{v}</dd></div>

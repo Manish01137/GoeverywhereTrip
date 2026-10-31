@@ -50,13 +50,29 @@ function payu_catalog(): array {
         $out = [];
         foreach ($content['trips'] as $t) {
             if (($t['status'] ?? 'Active') === 'Draft' || empty($t['slug']) || !isset($t['price'])) continue;
-            $out[$t['slug']] = ['name' => (string) $t['name'], 'price' => (float) $t['price'],
+            $out[$t['slug']] = ['name' => (string) $t['name'], 'price' => (float) $t['price'], 'sharing' => sharing_prices($t),
                                 'departures' => array_values(array_map(fn($d) => (string) ($d['date'] ?? ''), $t['departures'] ?? []))];
         }
         return $out;
     }
     $json = @file_get_contents(__DIR__ . '/catalog.json');
     return $json ? (json_decode($json, true) ?: []) : [];
+}
+
+/**
+ * Per-person price for each room-sharing option (null = not bookable online / on request).
+ * Mirrors sharingPrices() in src/lib/sharing.js: without admin prices, Quad & Triple use the trip
+ * price and Double & Single stay on request.
+ */
+function sharing_prices(array $t): array {
+    $base = (float) ($t['price'] ?? 0);
+    $s = $t['sharing'] ?? ['quad' => $base, 'triple' => $base, 'double' => null, 'single' => null];
+    $out = [];
+    foreach (['quad', 'triple', 'double', 'single'] as $k) {
+        $p = isset($s[$k]) && is_numeric($s[$k]) ? (float) $s[$k] : 0;
+        $out[$k] = $p > 0 ? $p : null;
+    }
+    return $out;
 }
 
 /** Private data folder (site content + backups), outside public_html when possible. */
